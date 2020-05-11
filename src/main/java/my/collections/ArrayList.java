@@ -1,9 +1,12 @@
 package my.collections;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
+import java.util.Collections;
 
 public class ArrayList implements List {
-    public Object[] mass;
+
+    public  Object[] mass;
     public int size;
 
     public ArrayList() {
@@ -15,6 +18,7 @@ public class ArrayList implements List {
         mass = new Object[capacity];
         size = 0;
     }
+
 
     @Override
     public boolean isEmpty() {
@@ -30,30 +34,42 @@ public class ArrayList implements List {
 
     @Override
     public boolean add(Object item) {
-        for (int i = 0; i < mass.length; i++)
-            if (mass[i] == null) {
-                mass[i] = item;
-                size++;
-                return true;
-            } else if (mass[i] != null)
-                if (i == mass.length) {
-                    mass = Arrays.copyOf(mass, (mass.length * 3) / 2 + 1);
-                    mass[i + 1] = item;
+        if (item != null) {
+            if (mass[mass.length-2] != null)
+                mass = Arrays.copyOf(mass, (mass.length * 3) / 2 + 1);
+            for (int i = 0; i < mass.length; i++)
+                if (mass[i] == null) {
+                    mass[i] = item;
                     size++;
                     return true;
                 }
-
+        } else return false;
         return false;
     }
 
     @Override
     public boolean remove(Object item) {
+        boolean xz = false;
+        for (int i = 0; i < mass.length; i++) {
+            if (mass[i] == null) {
+                return xz;
+            } else if (mass[i].equals(item)) {
+                xz = true;
+                for (int j = i; j < mass.length - 1; j++)
+                    mass[j] = mass[j + 1];
+                size--;
+                i--;
+
+            }
+        }
         return false;
     }
 
+
     @Override
     public void clear() {
-
+        mass = new Object[10];
+        size = 0;
     }
 
     @Override
@@ -63,36 +79,79 @@ public class ArrayList implements List {
 
     @Override
     public void add(int index, Object item) {
-
+        if (item == null) throw new NullPointerException();
+        else if (index >= size) throw new IndexOutOfBoundsException();
+        else if (mass[mass.length - 2] != null)
+            mass = Arrays.copyOf(mass, (mass.length * 3) / 2 + 1);
+        for (int i = size; i > index; i--)
+            mass[i] = mass[i-1];
+        mass[index] = item;
+        size++;
     }
 
     @Override
     public void set(int index, Object item) {
-
+        if (item == null) throw new NullPointerException();
+        else if (index >= size) throw new IndexOutOfBoundsException();
+        else mass[index] = item;
     }
 
     @Override
     public Object get(int index) {
-        return null;
+        if (mass[index] == null) throw new IndexOutOfBoundsException();
+        return mass[index];
     }
 
     @Override
     public int indexOf(Object item) {
-        return 0;
+        for (int i = 0; i < size; i++)
+            if (mass[i].equals(item)) return i;
+        return -1;
     }
 
     @Override
     public int lastIndexOf(Object item) {
-        return 0;
+        for (int i = size - 1; i > 0; i--)
+            if (mass[i].equals(item)) return i;
+        return -1;
     }
 
     @Override
     public void remove(int index) {
-
+        if (index >= size) throw new IndexOutOfBoundsException();
+        else for (int i = index; i < size-1;i++)
+            mass[i] = mass[i+1];
+        size--;
     }
 
     @Override
     public List subList(int from, int to) {
-        return null;
+        if (from >= size || to >= size) throw new IndexOutOfBoundsException();
+        else {
+            ArrayList arrayList = new ArrayList();
+            arrayList.mass = Arrays.copyOfRange(mass,from,to+1);
+            arrayList.mass = Arrays.copyOf(arrayList.mass, (arrayList.mass.length * 3) / 2 + 1);
+            arrayList.size = to - from+1;
+            return arrayList;
+        }
+
+    }
+
+    public static void main(String[] args){
+        ArrayList collection = new ArrayList();
+         collection.add(new String("t1"));
+        collection.add(new String("t2"));
+        collection.add(new String("t3"));
+        collection.add(new String("t4"));
+        collection.add(new String("t5"));
+        collection.add(new String("t6"));
+        collection.add(new String("t7"));
+        collection.add(new String("t8"));
+
+      ArrayList arrayList =(ArrayList) collection.subList(0,1);
+      for (int i = 0; i < arrayList.size;i++)
+          System.out.println(arrayList.get(i));
+        System.out.println(arrayList.mass.length);
     }
 }
+
