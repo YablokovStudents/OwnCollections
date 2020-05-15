@@ -1,6 +1,6 @@
 package my.collections;
 
-public interface Collection {
+public interface Collection extends Iterable{
     int size();
     boolean isEmpty() ;
     boolean contains(Object item);

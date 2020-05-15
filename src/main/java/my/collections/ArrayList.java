@@ -1,12 +1,11 @@
 package my.collections;
 
-import java.lang.reflect.Array;
+
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.Iterator;
 
 public class ArrayList implements List {
-
-    public  Object[] mass;
+    public Object[] mass;
     public int size;
 
     public ArrayList() {
@@ -35,7 +34,7 @@ public class ArrayList implements List {
     @Override
     public boolean add(Object item) {
         if (item != null) {
-            if (mass[mass.length-2] != null)
+            if (mass[mass.length - 2] != null)
                 mass = Arrays.copyOf(mass, (mass.length * 3) / 2 + 1);
             for (int i = 0; i < mass.length; i++)
                 if (mass[i] == null) {
@@ -80,11 +79,11 @@ public class ArrayList implements List {
     @Override
     public void add(int index, Object item) {
         if (item == null) throw new NullPointerException();
-        else if (index >= size) throw new IndexOutOfBoundsException();
+        else if (index > size) throw new IndexOutOfBoundsException();
         else if (mass[mass.length - 2] != null)
             mass = Arrays.copyOf(mass, (mass.length * 3) / 2 + 1);
         for (int i = size; i > index; i--)
-            mass[i] = mass[i-1];
+            mass[i] = mass[i - 1];
         mass[index] = item;
         size++;
     }
@@ -92,7 +91,7 @@ public class ArrayList implements List {
     @Override
     public void set(int index, Object item) {
         if (item == null) throw new NullPointerException();
-        else if (index >= size) throw new IndexOutOfBoundsException();
+        else if (index >= size || isEmpty()) throw new IndexOutOfBoundsException();
         else mass[index] = item;
     }
 
@@ -119,39 +118,49 @@ public class ArrayList implements List {
     @Override
     public void remove(int index) {
         if (index >= size) throw new IndexOutOfBoundsException();
-        else for (int i = index; i < size-1;i++)
-            mass[i] = mass[i+1];
+        else for (int i = index; i < size - 1; i++)
+            mass[i] = mass[i + 1];
         size--;
     }
 
     @Override
     public List subList(int from, int to) {
-        if (from >= size || to >= size) throw new IndexOutOfBoundsException();
+        if (from >= size || to >= size || from > to) throw new IndexOutOfBoundsException();
         else {
             ArrayList arrayList = new ArrayList();
-            arrayList.mass = Arrays.copyOfRange(mass,from,to+1);
+            arrayList.mass = Arrays.copyOfRange(mass, from, to + 1);
             arrayList.mass = Arrays.copyOf(arrayList.mass, (arrayList.mass.length * 3) / 2 + 1);
-            arrayList.size = to - from+1;
+            arrayList.size = to - from + 1;
             return arrayList;
         }
 
     }
 
-    public static void main(String[] args){
-        ArrayList collection = new ArrayList();
-         collection.add(new String("t1"));
-        collection.add(new String("t2"));
-        collection.add(new String("t3"));
-        collection.add(new String("t4"));
-        collection.add(new String("t5"));
-        collection.add(new String("t6"));
-        collection.add(new String("t7"));
-        collection.add(new String("t8"));
 
-      ArrayList arrayList =(ArrayList) collection.subList(0,1);
-      for (int i = 0; i < arrayList.size;i++)
-          System.out.println(arrayList.get(i));
-        System.out.println(arrayList.mass.length);
+    @Override
+    public Iterator iterator() {
+        return new ArrayIterator();
+    }
+
+
+    public class ArrayIterator implements Iterator {
+        int number = 0;
+        int numberNext = 0;
+
+        @Override
+        public boolean hasNext() {
+            if (mass[number] != null) {
+                number++;
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public Object next() {
+
+            return mass[numberNext++];
+        }
     }
 }
 
