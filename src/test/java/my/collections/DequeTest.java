@@ -1,25 +1,32 @@
 package my.collections;
 
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.util.Iterator;
+
 import static org.testng.Assert.*;
-import static org.testng.Assert.assertEquals;
 
-public class LinkedListTest {
+public class DequeTest {
+    @DataProvider(name = "deques")
+    public Object[][] getDeques() {
+        return new Object[][]{
+                {new LinkedList()}
+        };
+    }
 
-    @Test
-    public void testAddFirst() {
-        LinkedList linkedList = new LinkedList();
-        linkedList.add("j");
-        linkedList.add("k");
-        linkedList.add("h");
-        linkedList.add("j");
-        linkedList.add("j");
-        linkedList.add("o");
-        linkedList.add("j");
-        linkedList.addFirst("a");
-        assertEquals(linkedList.getFirst(),"a");
-        for (Object o : linkedList) System.out.println(o);
+    @Test(dataProvider = "deques")
+    public void addFirst(Deque deque) {
+        deque.add("j");
+        deque.add("k");
+        deque.add("h");
+        deque.add("j");
+        deque.add("j");
+        deque.add("o");
+        deque.add("j");
+        deque.addFirst("a");
+        assertEquals(deque.getFirst(), "a");
+        for (Object o : deque) System.out.println(o);
     }
 
     @Test
@@ -33,7 +40,7 @@ public class LinkedListTest {
         linkedList.add("o");
         linkedList.add("j");
         linkedList.addLast("a");
-        assertEquals(linkedList.getLast(),"a");
+        assertEquals(linkedList.getLast(), "a");
         for (Object o : linkedList) System.out.println(o);
     }
 
@@ -44,8 +51,8 @@ public class LinkedListTest {
         linkedList.add("o2");
         linkedList.add("o3");
         linkedList.add("o4");
-        assertEquals(linkedList.pollFirst(),"o1");
-        assertEquals(linkedList.getFirst(),"o2");
+        assertEquals(linkedList.pollFirst(), "o1");
+        assertEquals(linkedList.getFirst(), "o2");
         for (Object o : linkedList) System.out.println(o);
     }
 
@@ -59,8 +66,8 @@ public class LinkedListTest {
         linkedList.add("j");
         linkedList.add("o");
         linkedList.add("j");
-        assertEquals(linkedList.pollLast(),"j");
-        assertEquals(linkedList.getLast(),"o");
+        assertEquals(linkedList.pollLast(), "j");
+        assertEquals(linkedList.getLast(), "o");
         for (Object o : linkedList) System.out.println(o);
     }
 
@@ -71,8 +78,8 @@ public class LinkedListTest {
         linkedList.add("o2");
         linkedList.add("o3");
         linkedList.add("o4");
-        assertEquals(linkedList.removeFirst(),"o1");
-        assertEquals(linkedList.getFirst(),"o2");
+        assertEquals(linkedList.removeFirst(), "o1");
+        assertEquals(linkedList.getFirst(), "o2");
         for (Object o : linkedList) System.out.println(o);
     }
 
@@ -83,8 +90,8 @@ public class LinkedListTest {
         linkedList.add("o2");
         linkedList.add("o3");
         linkedList.add("o4");
-        assertEquals(linkedList.removeLast(),"o4");
-        assertEquals(linkedList.getLast(),"o3");
+        assertEquals(linkedList.removeLast(), "o4");
+        assertEquals(linkedList.getLast(), "o3");
         for (Object o : linkedList) System.out.println(o);
     }
 
@@ -94,8 +101,8 @@ public class LinkedListTest {
         linkedList.add("o1");
         linkedList.add("o2");
         linkedList.add("o3");
-        linkedList.add(2,"o4");
-        assertEquals(linkedList.get(2),"o4");
+        linkedList.add(2, "o4");
+        assertEquals(linkedList.get(2), "o4");
         for (Object o : linkedList) System.out.println(o);
     }
 
@@ -105,8 +112,8 @@ public class LinkedListTest {
         linkedList.add("o1");
         linkedList.add("o2");
         linkedList.add("o3");
-        linkedList.set(2,"o4");
-        assertEquals(linkedList.get(2),"o4");
+        linkedList.set(2, "o4");
+        assertEquals(linkedList.get(2), "o4");
     }
 
     @Test
@@ -115,7 +122,7 @@ public class LinkedListTest {
         linkedList.add("o1");
         linkedList.add("o2");
         linkedList.add("o3");
-        assertEquals(linkedList.indexOf("o2"),1);
+        assertEquals(linkedList.indexOf("o2"), 1);
 
     }
 
@@ -130,7 +137,7 @@ public class LinkedListTest {
         linkedList.add("o3");
         linkedList.add("o3");
         linkedList.add("o2");
-        assertEquals(linkedList.lastIndexOf("o3"),6);
+        assertEquals(linkedList.lastIndexOf("o3"), 6);
     }
 
     @Test
@@ -141,8 +148,8 @@ public class LinkedListTest {
         linkedList.add("o");
         linkedList.add("j");
         linkedList.remove(2);
-       // assertEquals(linkedList.get(0),"k");
-        for (int i = 0; i < linkedList.size;i++)
+        // assertEquals(linkedList.get(0),"k");
+        for (int i = 0; i < linkedList.size; i++)
             System.out.println(linkedList.get(i));
     }
 
@@ -154,8 +161,8 @@ public class LinkedListTest {
         linkedList.add("o");
         linkedList.add("j");
         LinkedList linkedList1 = (LinkedList) linkedList.subList(0, 2);
-       for (int i = 0;i< linkedList1.size;i++)
-           System.out.println(linkedList1.get(i));
+        for (int i = 0; i < linkedList1.size; i++)
+            System.out.println(linkedList1.get(i));
         System.out.println(linkedList1.size);
 
     }
@@ -181,7 +188,7 @@ public class LinkedListTest {
         linkedList.add("o");
         linkedList.add("j");
         assertTrue(linkedList.remove("j"));
-        for (int i = 0 ; i < linkedList.size;i ++)
+        for (int i = 0; i < linkedList.size; i++)
             System.out.println(linkedList.get(i));
         System.out.println(linkedList.size);
     }

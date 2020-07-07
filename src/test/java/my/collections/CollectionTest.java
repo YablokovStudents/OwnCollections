@@ -1,124 +1,106 @@
 package my.collections;
 
-import org.testng.Assert;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-
-import java.util.Iterator;
 
 import static org.testng.Assert.*;
 
+/**
+ * Тестирование функциональности классов, наследников {@link Collection}.
+ */
 public class CollectionTest {
-    @Test
-    public void isEmpty() {
-        Collection collection = new ArrayList();
-        collection.add(new Object());
+    @DataProvider(name = "collections")
+    public Object[][] getCollections() {
+        return new Object[][]{
+                {new ArrayList()},
+                {new LinkedList()}
+        };
+    }
+
+    @Test(dataProvider = "collections")
+    public void isEmpty(Collection collection) {
+        assertTrue(collection.isEmpty());
+
+        collection.add(1);
         assertFalse(collection.isEmpty());
     }
 
-    @Test
-    public void size() {
-        Collection collection = new ArrayList();
-        collection.add(new Object());
-        collection.add(new Object());
+    @Test(dataProvider = "collections")
+    public void size(Collection collection) {
+        assertEquals(collection.size(), 0);
+
+        collection.add(1);
+        assertEquals(collection.size(), 1);
+
+        collection.add(2);
+        collection.add(3);
+        collection.add(4);
+        assertEquals(collection.size(), 4);
+
+        collection.add(null);
+        collection.add(null);
+        assertEquals(collection.size(), 6);
+    }
+
+    @Test(dataProvider = "collections")
+    public void contains(Collection collection) {
+        assertFalse(collection.contains(1));
+
+        collection.add(1);
+        collection.add(2);
+        collection.add(4);
+        assertTrue(collection.contains(1));
+        assertTrue(collection.contains(2));
+        assertTrue(collection.contains(4));
+        assertFalse(collection.contains(3));
+
+    }
+
+    @Test(dataProvider = "collections")
+    public void add(Collection collection) {
+        assertFalse(collection.contains(1));
+
+        assertTrue(collection.add(1));
+        assertTrue(collection.contains(1));
+
+        assertTrue(collection.add(null));
+        assertTrue(collection.contains(null));
+    }
+
+    @Test(dataProvider = "collections")
+    public void remove(Collection collection) {
+        assertFalse(collection.remove("value1"));
+
+        collection.add("value1");
+        collection.add("value2");
+        collection.add("value3");
+        collection.add("value3");
+        collection.add("value4");
+
+        assertTrue(collection.remove("value1"));
+        assertFalse(collection.contains("value1"));
+        assertEquals(collection.size(), 4);
+
+        assertTrue(collection.remove("value3"));
+        assertFalse(collection.contains("value3"));
         assertEquals(collection.size(), 2);
+
+        collection.add(null);
+        assertTrue(collection.remove(null));
     }
 
-    @Test
-    public void contains() {
-        Collection collection = new ArrayList();
-        Object object = new Object();
-        collection.add(object);
-        collection.add("hil");
-        collection.add("object");
-        assertTrue(collection.contains(object));
+    @Test(dataProvider = "collections")
+    public void clear(Collection collection) {
+        collection.clear();
 
-    }
+        collection.add("value1");
+        collection.add("value2");
+        collection.add("value3");
+        collection.add("value3");
+        collection.add("value4");
+        collection.add(null);
 
-    @Test
-    public void add() {
-        Collection collection = new ArrayList();
-         collection.add(new Object());
-        assertTrue(collection.add(new Object()));
-    }
-
-    @Test
-    public void testAdd1() {
-        ArrayList collection = new ArrayList();
-        collection.add(new String("ty"));
-        collection.add(new String("tyy"));
-        collection.add(new String("tyy"));
-        collection.add(new String("tty"));
-        collection.add(4, "456");
-        for (Object o : collection)
-            System.out.println(o);
-    }
-
-    @Test
-    public void testSet() {
-        ArrayList collection = new ArrayList();
-        collection.add(new String("ty"));
-        collection.add(new String("tyy"));
-        collection.add(new String("tyy"));
-        collection.add(new String("tty"));
-        collection.set(1, "6678");
-        for (Object o : collection)
-            System.out.println(o);
-    }
-
-    @Test
-    public void testSubList() {
-        ArrayList collection = new ArrayList();
-        collection.add(new String("ty"));
-        collection.add(new String("tyy"));
-        collection.add(new String("tyyu"));
-        collection.add(new String("tty"));
-        List list = collection.subList(0, 3);
-        for (Object o : list)
-            System.out.println(o);
-    }
-
-    @Test
-    public void remove() {
-        Collection collection = new ArrayList();
-        collection.add(new String("ty"));
-        collection.add(new String("tyy"));
-        collection.add(new String("tyy"));
-        collection.add(new String("tty"));
-        collection.remove("tyy");
-        // collection.remove("tyy");
-        assertFalse(collection.contains("tyy"));
-    }
-
-    @Test
-    public void indexOf() {
-        ArrayList collection = new ArrayList();
-        collection.add(new String("ty"));
-        collection.add(new String("tyy"));
-        collection.add(new String("tyy"));
-        collection.add(new String("tty"));
-
-        assertEquals(collection.indexOf("tyy"), 1);
-    }
-
-    @Test
-    public void lastIndexOf() {
-        ArrayList collection = new ArrayList();
-        collection.add(new String("ty"));
-        collection.add(new String("tyy"));
-        collection.add(new String("tyy"));
-        collection.add(new String("tyy"));
-        collection.add(new String("tty"));
-        assertEquals(collection.lastIndexOf("tyy"), 2);
-    }
-
-    @Test
-    public void Iterator() {
-        ArrayList collection = new ArrayList();
-        collection.add(new String("ty"));
-        collection.add(new String("tyy"));
-        collection.add(new String("tyy"));
-        collection.add(new String("tyy"));
-        collection.add(new String("tty"));
-        for (Object o : collection) System.out.println(o);
+        collection.clear();
+        assertTrue(collection.isEmpty());
     }
 }

@@ -5,57 +5,56 @@ import java.util.Arrays;
 import java.util.Iterator;
 
 public class ArrayList implements List {
-    public Object[] mass;
+    public Object[] array;
     public int size;
 
     public ArrayList() {
-        mass = new Object[10];
-        size = 0;
+        this(10);
     }
 
     public ArrayList(int capacity) {
-        mass = new Object[capacity];
-        size = 0;
+        array = new Object[capacity];
     }
-
 
     @Override
     public boolean isEmpty() {
-        return (size == 0);
+        return size == 0;
     }
 
     @Override
     public boolean contains(Object item) {
-        for (int i = 0; i < size; i++)
-            if (mass[i].equals(item)) return true;
+        if (item == null) {
+            for (int i = 0; i < size; ++i) {
+                if (array[i] == null) {
+                    return true;
+                }
+            }
+        } else {
+            for (int i = 0; i < size; ++i) {
+                if (item.equals(array[i])) {
+                    return true;
+                }
+            }
+        }
         return false;
     }
 
     @Override
     public boolean add(Object item) {
-        if (item != null) {
-            if (mass[mass.length - 2] != null)
-                mass = Arrays.copyOf(mass, (mass.length * 3) / 2 + 1);
-            for (int i = 0; i < mass.length; i++)
-                if (mass[i] == null) {
-                    mass[i] = item;
-                    size++;
-                    return true;
-                }
-        } else return false;
-        return false;
+        add(size, item);
+        return true;
     }
 
     @Override
     public boolean remove(Object item) {
         boolean xz = false;
-        for (int i = 0; i < mass.length; i++) {
-            if (mass[i] == null) {
+        for (int i = 0; i < array.length; i++) {
+            if (array[i] == null) {
                 return xz;
-            } else if (mass[i].equals(item)) {
+            } else if (array[i].equals(item)) {
                 xz = true;
-                for (int j = i; j < mass.length - 1; j++)
-                    mass[j] = mass[j + 1];
+                for (int j = i; j < array.length - 1; j++)
+                    array[j] = array[j + 1];
                 size--;
                 i--;
 
@@ -67,7 +66,7 @@ public class ArrayList implements List {
 
     @Override
     public void clear() {
-        mass = new Object[10];
+        array = new Object[10];
         size = 0;
     }
 
@@ -78,40 +77,59 @@ public class ArrayList implements List {
 
     @Override
     public void add(int index, Object item) {
-        if (item == null) throw new NullPointerException();
-        else if (index > size) throw new IndexOutOfBoundsException();
-        else if (mass[mass.length - 2] != null)
-            mass = Arrays.copyOf(mass, (mass.length * 3) / 2 + 1);
-        for (int i = size; i > index; i--)
-            mass[i] = mass[i - 1];
-        mass[index] = item;
+        checkRange(index);
+        extendArrayIfFull();
+        for (int i = size; i > index; --i) {
+            array[i] = array[i - 1];
+        }
+        array[index] = item;
         size++;
     }
 
     @Override
     public void set(int index, Object item) {
-        if (item == null) throw new NullPointerException();
-        else if (index >= size || isEmpty()) throw new IndexOutOfBoundsException();
-        else mass[index] = item;
+        if (index == size) {
+            add(item);
+        } else {
+            checkRange(index);
+            array[index] = item;
+        }
+    }
+
+    private void checkRange(int index) {
+        if ((index < 0) || (index > size)) {
+            throw new IndexOutOfBoundsException();
+        }
+    }
+
+    private void extendArrayIfFull() {
+        if (array.length == size) {
+            array = Arrays.copyOf(array, (array.length * 3) / 2 + 1);
+        }
     }
 
     @Override
     public Object get(int index) {
-        if (mass[index] == null) throw new IndexOutOfBoundsException();
-        return mass[index];
+        if ((index < 0) || (index >= size)) {
+            throw new IndexOutOfBoundsException();
+        }
+        return array[index];
     }
 
     @Override
     public int indexOf(Object item) {
-        for (int i = 0; i < size; i++)
-            if (mass[i].equals(item)) return i;
-        return -1;
+        for (int i = 0; i < size; i++) {
+            if (item.equals(array[i])) {
+                return i;
+            }
+        }
+        return List.NOT_FOUND;
     }
 
     @Override
     public int lastIndexOf(Object item) {
         for (int i = size - 1; i > 0; i--)
-            if (mass[i].equals(item)) return i;
+            if (array[i].equals(item)) return i;
         return -1;
     }
 
@@ -119,7 +137,7 @@ public class ArrayList implements List {
     public void remove(int index) {
         if (index >= size) throw new IndexOutOfBoundsException();
         else for (int i = index; i < size - 1; i++)
-            mass[i] = mass[i + 1];
+            array[i] = array[i + 1];
         size--;
     }
 
@@ -128,38 +146,29 @@ public class ArrayList implements List {
         if (from >= size || to >= size || from > to) throw new IndexOutOfBoundsException();
         else {
             ArrayList arrayList = new ArrayList();
-            arrayList.mass = Arrays.copyOfRange(mass, from, to + 1);
-            arrayList.mass = Arrays.copyOf(arrayList.mass, (arrayList.mass.length * 3) / 2 + 1);
+            arrayList.array = Arrays.copyOfRange(array, from, to + 1);
+            arrayList.array = Arrays.copyOf(arrayList.array, (arrayList.array.length * 3) / 2 + 1);
             arrayList.size = to - from + 1;
             return arrayList;
         }
-
     }
-
 
     @Override
     public Iterator iterator() {
-        return new ArrayIterator();
+        return new ArrayListIterator();
     }
 
-
-    public class ArrayIterator implements Iterator {
-        int number = 0;
-        int numberNext = 0;
+    public class ArrayListIterator implements Iterator {
+        private int position;
 
         @Override
         public boolean hasNext() {
-            if (mass[number] != null) {
-                number++;
-                return true;
-            }
-            return false;
+            return position < size;
         }
 
         @Override
         public Object next() {
-
-            return mass[numberNext++];
+            return array[position++];
         }
     }
 }
