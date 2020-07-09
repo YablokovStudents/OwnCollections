@@ -2,7 +2,9 @@ package my.collections;
 
 
 import java.util.Arrays;
+import java.util.ConcurrentModificationException;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 public class ArrayList implements List {
     public Object[] array;
@@ -48,19 +50,27 @@ public class ArrayList implements List {
     @Override
     public boolean remove(Object item) {
         boolean xz = false;
-        for (int i = 0; i < array.length; i++) {
-            if (array[i] == null) {
-                return xz;
-            } else if (array[i].equals(item)) {
-                xz = true;
-                for (int j = i; j < array.length - 1; j++)
-                    array[j] = array[j + 1];
-                size--;
-                i--;
-
+        if (item == null)
+            for (int i = 0; i < size; i++) {
+                if (array[i] == null) {
+                    xz = true;
+                    for (int j = i; j < size; j++)
+                        array[j] = array[j + 1];
+                    size--;
+                    i--;
+                }
             }
-        }
-        return false;
+        else
+            for (int i = 0; i < size; i++) {
+                if (array[i].equals(item)) {
+                    xz = true;
+                    for (int j = i; j < size; j++)
+                        array[j] = array[j + 1];
+                    size--;
+                    i--;
+                }
+            }
+        return xz;
     }
 
 
@@ -118,19 +128,31 @@ public class ArrayList implements List {
 
     @Override
     public int indexOf(Object item) {
-        for (int i = 0; i < size; i++) {
-            if (item.equals(array[i])) {
-                return i;
+        if (item != null) {
+            for (int i = 0; i < size; i++) {
+                if (item.equals(array[i])) {
+                    return i;
+                }
             }
-        }
+        } else
+            for (int i = 0; i < size; i++)
+                if (array[i] == null)
+                    return i;
         return List.NOT_FOUND;
     }
 
     @Override
     public int lastIndexOf(Object item) {
-        for (int i = size - 1; i > 0; i--)
-            if (array[i].equals(item)) return i;
-        return -1;
+        if (isEmpty()) return List.NOT_FOUND;
+        if (item != null) {
+            for (int i = size - 1; i >= 0; i--)
+                if (item.equals(array[i])) return i;
+
+        } else
+            for (int i = size - 1; i > 0; i--)
+                if (array[i] == null)
+                    return i;
+        return List.NOT_FOUND;
     }
 
     @Override
@@ -143,12 +165,12 @@ public class ArrayList implements List {
 
     @Override
     public List subList(int from, int to) {
-        if (from >= size || to >= size || from > to) throw new IndexOutOfBoundsException();
+        if (from >= size || to > size || from > to) throw new IndexOutOfBoundsException();
         else {
             ArrayList arrayList = new ArrayList();
-            arrayList.array = Arrays.copyOfRange(array, from, to + 1);
+            arrayList.array = Arrays.copyOfRange(this.array, from, to);
             arrayList.array = Arrays.copyOf(arrayList.array, (arrayList.array.length * 3) / 2 + 1);
-            arrayList.size = to - from + 1;
+            arrayList.size = to - from;
             return arrayList;
         }
     }
@@ -160,6 +182,7 @@ public class ArrayList implements List {
 
     public class ArrayListIterator implements Iterator {
         private int position;
+        Object[] array1;
 
         @Override
         public boolean hasNext() {
@@ -168,7 +191,16 @@ public class ArrayList implements List {
 
         @Override
         public Object next() {
-            return array[position++];
+
+            if (hasNext()) {
+                if (position == 0)
+                    array1 = Arrays.copyOfRange(array, 0, size);
+
+                if ((Arrays.deepEquals(array1, Arrays.copyOfRange(array, 0, size)))) {
+                    return array[position++];
+                } else
+                    throw new ConcurrentModificationException();
+            } else throw new NoSuchElementException();
         }
     }
 }

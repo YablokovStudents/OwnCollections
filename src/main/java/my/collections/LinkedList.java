@@ -1,5 +1,7 @@
 package my.collections;
 
+import java.util.Arrays;
+import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -9,22 +11,46 @@ public class LinkedList implements List, Deque {
     int size = 0;
 
     public class LinkedIterator implements Iterator {
-        Node number = first;
-        Node numberNext = first;
+        /*Node number = first;
+        Node numberNext = first;*/
+        int position = 0;
+        Node node = first;
+        Object[] arr = new Object[size];
 
         @Override
         public boolean hasNext() {
-            if (number != null) {
-                number = number.next;
-                return true;
-            }
-            return false;
+            /*if (number != null) {
+                number = number.next;*/
+            return position < size;
         }
 
         @Override
         public Object next() {
-            Node node = numberNext;
-            numberNext = numberNext.next;
+            if (hasNext()) {
+                if (position == 0) {
+                    arr[0] = node.item;
+                    node = node.next;
+                    for (int i = 1; i < size - 1; i++) {
+                        arr[i] = node.item;
+                        node = node.next;
+                    }
+                    arr[size - 1] = node.item;
+                    node = first;
+                    position++;
+                    return first.item;
+                } else {
+                    Node node1 = first;
+                    for (int j = 0; j < arr.length; j++) {
+                        if (arr[j] != null) {
+                            if (!arr[j].equals(node1.item)) throw new ConcurrentModificationException();
+                        } else if (node1.item != null) throw new ConcurrentModificationException();
+                        node1 = node1.next;
+                    }
+                    if (node1 != null) throw new ConcurrentModificationException();
+                    node = node.next;
+                    position++;
+                }
+            } else throw new NoSuchElementException();
             return node.item;
         }
     }
@@ -85,7 +111,7 @@ public class LinkedList implements List, Deque {
 
     @Override
     public Object pollFirst() {
-        if (first != null) {
+        if (size != 0) {
             Object o = first.item;
             first = first.next;
             first.prev = null;
@@ -98,7 +124,7 @@ public class LinkedList implements List, Deque {
 
     @Override
     public Object pollLast() {
-        if (last != null) {
+        if (size != 0) {
             Object o = last.item;
             last = last.prev;
             last.next = null;
@@ -131,7 +157,6 @@ public class LinkedList implements List, Deque {
     @Override
     public void add(int index, Object item) {
         if (index > size || index < 0) throw new IndexOutOfBoundsException();
-        if (item == null) throw new NullPointerException();
         if (index == 0) {
             addFirst(item);
             return;
@@ -153,8 +178,11 @@ public class LinkedList implements List, Deque {
 
     @Override
     public void set(int index, Object item) {
-        if (index >= size || isEmpty()) throw new IndexOutOfBoundsException();
-        if (item == null) throw new NullPointerException();
+        if (index > size) throw new IndexOutOfBoundsException();
+        if (size == 0)
+            add(item);
+        if (index == size)
+            addLast(item);
         Node obj = first;
         for (int i = 0; i < index; i++)
             obj = obj.next;
@@ -172,28 +200,45 @@ public class LinkedList implements List, Deque {
 
     @Override
     public int indexOf(Object item) {
-        if (item == null) throw new NullPointerException();
-        if (isEmpty()) throw new IndexOutOfBoundsException();
-        Node obj = first;
-        if (obj.item.equals(item)) return 0;
-        for (int i = 1; i < size; i++) {
-            obj = obj.next;
-            if (obj.item == item) return i;
+        if (isEmpty()) return List.NOT_FOUND;
+        if (item != null) {
+            Node obj = first;
+            if (obj.item.equals(item)) return 0;
+            for (int i = 1; i < size; i++) {
+                obj = obj.next;
+                if (obj.item == item) return i;
+            }
+        } else {
+            Node obj = first;
+            if (obj.item == null) return 0;
+            for (int i = 1; i < size; i++) {
+                obj = obj.next;
+                if (obj.item == null) return i;
+            }
         }
-        return -1;
+        return List.NOT_FOUND;
     }
 
     @Override
     public int lastIndexOf(Object item) {
-        if (item == null) throw new NullPointerException();
-        if (isEmpty()) throw new IndexOutOfBoundsException();
-        Node obj = last;
-        if (obj.item == item) return size - 1;
-        for (int i = size - 2; i >= 0; i--) {
-            obj = obj.prev;
-            if (obj.item == item) return i;
+        if (isEmpty()) return List.NOT_FOUND;
+        if (item != null) {
+            Node obj = last;
+            if (obj.item == item) return size - 1;
+            for (int i = size - 2; i >= 0; i--) {
+                obj = obj.prev;
+                if (obj.item == item) return i;
+            }
+        } else {
+            Node obj = last;
+            if (obj.item == null) return size - 1;
+            for (int i = size - 2; i >= 0; i--) {
+                obj = obj.prev;
+                if (obj.item == null) return i;
+            }
         }
-        return -1;
+
+        return List.NOT_FOUND;
     }
 
     @Override
@@ -228,7 +273,7 @@ public class LinkedList implements List, Deque {
 
     @Override
     public List subList(int from, int to) {
-        if (from < 0 || to >= size || to < 0 || from >= size || isEmpty()) throw new IndexOutOfBoundsException();
+        if (from < 0 || to > size || to < 0 || from >= size || isEmpty()) throw new IndexOutOfBoundsException();
         LinkedList linkedList = new LinkedList();
         Node node = first;
         Node node1 = last;
@@ -239,7 +284,7 @@ public class LinkedList implements List, Deque {
         }
         first = node;
         first.prev = null;
-        for (int j = size - 1; j > to; j--) {
+        for (int j = size - 1; j > to - 1; j--) {
             node1 = node1.prev;
             i1++;
         }
@@ -263,57 +308,94 @@ public class LinkedList implements List, Deque {
 
     @Override
     public boolean contains(Object item) {
-        if (item == null) throw new NullPointerException();
+        if (size == 0) return false;
         Node node = first;
-        if (node.item.equals(item)) return true;
-        for (int i = 0; i < size - 1; i++) {
-            node = node.next;
-            if (node.item.equals(item)) return true;
+        if (item == null) {
+            if (first.item == null) return true;
+            else
+                for (int i = 0; i < size - 1; i++) {
+                    node = node.next;
+                    if (node.item == null) return true;
+                }
+            return false;
+        } else {
+            node = first;
+            if (item.equals(node.item)) return true;
+            for (int i = 0; i < size - 1; i++) {
+                node = node.next;
+                if (item.equals(node.item)) return true;
+            }
+            return false;
         }
-        return false;
     }
 
     @Override
     public boolean add(Object item) {
-        if (item != null) {
-            Node node1 = new Node(item);
-            if (last == null) {
-                first = node1;
-                last = node1;
-            } else {
-                node1.prev = last;
-                last.next = node1;
-                last = node1;
-            }
-            size++;
-            return true;
-
+        Node node1 = new Node(item);
+        if (first == null) {
+            first = node1;
+            last = node1;
+        } else {
+            node1.prev = last;
+            last.next = node1;
+            last = node1;
         }
-        return false;
+        size++;
+        return true;
+
     }
 
     @Override
     public boolean remove(Object item) {
-        if (item == null) throw new IndexOutOfBoundsException();
+        if (size == 0) return false;
         Node node = first;
         int sz = 0;
-        if (first.item.equals(item)) {
-            first = first.next;
-            first.prev = null;
-            sz++;
-        }
-        for (int i = 1; i < size - 2; i++) {
-            node = node.next;
-            if (node.item.equals(item)) {
-                node.prev.next = node.next;
-                node.next.prev = node.prev;
+
+        if (item == null) {
+            if (first.item == null) {
+                first = first.next;
+                if (first != null)
+                    first.prev = null;
+
                 sz++;
             }
-            if (last.item.equals(item)) {
+
+            for (int i = 0; i < size - 2; i++) {
+                node = node.next;
+                if (node.item == null) {
+                    node.prev.next = node.next;
+                    node.next.prev = node.prev;
+                    sz++;
+                }
+                if (last.item == null) {
+                    last = last.prev;
+                    if (last != null)
+                        last.next = null;
+                    sz++;
+                }
+            }
+        } else {
+
+            if (item.equals(first.item)) {
+                first = first.next;
+                first.prev = null;
+                sz++;
+            }
+            for (int i = 0; i < size - 2; i++) {
+                node = node.next;
+                if (item.equals(node.item)) {
+                    node.prev.next = node.next;
+                    node.next.prev = node.prev;
+
+                    sz++;
+                }
+            }
+            if (item.equals(last.item)) {
                 last = last.prev;
                 last.next = null;
                 sz++;
             }
+
         }
         size -= sz;
         return sz > 0;

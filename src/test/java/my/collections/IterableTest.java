@@ -51,7 +51,7 @@ public class IterableTest {
         iterable.iterator().next();
     }
 
-    @Test(dataProvider = "filledIterables", expectedExceptions = ConcurrentModificationException.class)
+    @Test(dataProvider = "filledIterables")
     public void iterator_multipleCase(Iterable iterable) {
         Iterator iterator1 = iterable.iterator();
         Iterator iterator2 = iterable.iterator();
@@ -88,9 +88,8 @@ public class IterableTest {
         Iterator iterator = list.iterator();
         assertTrue(iterator.hasNext());
         assertEquals(iterator.next(), 1);
-
-        list.add(4);
-        assertTrue(iterator.hasNext());
+        list.add(5);
+        list.add(null);
         iterator.next();
     }
 }
