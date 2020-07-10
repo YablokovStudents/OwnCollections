@@ -50,8 +50,8 @@ public class ListTest {
         list.add(3);
         list.add(4);
         list.add(5);
-        List subList = list.subList(2, 4);
-        assertEquals(subList.size(), 2);
+        List subList = list.subList(0, 5);
+        assertEquals(subList.size(), 5);
     }
 
     @Test(dataProvider = "lists")

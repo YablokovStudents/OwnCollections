@@ -275,6 +275,8 @@ public class LinkedList implements List, Deque {
     public List subList(int from, int to) {
         if (from < 0 || to > size || to < 0 || from >= size || isEmpty()) throw new IndexOutOfBoundsException();
         LinkedList linkedList = new LinkedList();
+        if (from == to)
+            return linkedList;
         Node node = first;
         Node node1 = last;
         int i1 = 0;

@@ -157,7 +157,7 @@ public class ArrayList implements List {
 
     @Override
     public void remove(int index) {
-        if (index >= size) throw new IndexOutOfBoundsException();
+        if (index >= size|| index < 0) throw new IndexOutOfBoundsException();
         else for (int i = index; i < size - 1; i++)
             array[i] = array[i + 1];
         size--;
