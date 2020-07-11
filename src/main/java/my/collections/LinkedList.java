@@ -1,294 +1,299 @@
 package my.collections;
 
-import java.util.Arrays;
-import java.util.ConcurrentModificationException;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 public class LinkedList implements List, Deque {
     private Node first;
     private Node last;
-    private int size = 0;
-    private int numberchanges;
+    private int size;
+    private int modificationCount;
 
-    public class LinkedIterator implements Iterator {
-        public int numberchanges = LinkedList.this.numberchanges;
-        int position = 0;
-        Node node = first;
+    private class IteratorImpl implements Iterator {
+        private final int modificationCount = LinkedList.this.modificationCount;
+        private Node node = first;
 
         @Override
         public boolean hasNext() {
-            return position < size;
+            return node != null;
         }
 
         @Override
         public Object next() {
-            if (hasNext()) {
-                if (numberchanges != LinkedList.this.numberchanges) throw new ConcurrentModificationException();
-                if (position == 0){
-                    position++;
-                    return node.item;
-                }
-                node = node.next;
-                position++;
-            } else throw new NoSuchElementException();
-            return node.item;
+            if (modificationCount != LinkedList.this.modificationCount) {
+                throw new ConcurrentModificationException();
+            }
+
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+
+            Object result = node.item;
+            node = node.next;
+            return result;
         }
     }
 
     @Override
     public Iterator iterator() {
-        return new LinkedIterator();
+        return new IteratorImpl();
     }
 
-    public class Node {
-        Object item;
-        Node next;
-        Node prev;
+    private static class Node {
+        private Object item;
+        private Node prev;
+        private Node next;
 
-        public Node(Object item) {
+        public Node(Object item, Node prev, Node next) {
             this.item = item;
+            this.prev = prev;
+            this.next = next;
         }
     }
 
     @Override
     public void addFirst(Object item) {
-        Node node1 = new Node(item);
-        if (first == null) {
-            first = node1;
-            last = node1;
-        } else {
-            node1.next = first;
-            first = node1;
-            node1.next.prev = first;
-        }
-        size++;
-        numberchanges++;
+        add(0, item);
     }
 
     @Override
     public void addLast(Object item) {
-        Node node1 = new Node(item);
-        if (last == null) {
-            first = node1;
-            last = node1;
-        } else {
-            node1.prev = last;
-            last.next = node1;
-            last = node1;
-        }
-        size++;
-        numberchanges++;
+        add(size, item);
     }
 
     @Override
     public Object getFirst() {
-
+        checkRangeFotGet(0);
         return first.item;
     }
 
     @Override
     public Object getLast() {
+        checkRangeFotGet(size - 1);
         return last.item;
+    }
+
+    private void checkRangeFotGet(int index) {
+        if ((index < 0) || (index >= size)) {
+            throw new NoSuchElementException();
+        }
     }
 
     @Override
     public Object pollFirst() {
-        if (size != 0) {
-            Object o = first.item;
-            first = first.next;
-            first.prev = null;
-            size--;
-            numberchanges++;
-            return o;
-
+        if (first == null) {
+            return null;
         }
-        return null;
+        return deleteNode(first);
     }
 
     @Override
     public Object pollLast() {
-        if (size != 0) {
-            Object o = last.item;
-            last = last.prev;
-            last.next = null;
-            size--;
-            numberchanges++;
-            return o;
+        if (last == null) {
+            return null;
         }
-        return null;
+        return deleteNode(last);
     }
 
     @Override
     public Object removeFirst() {
-        if (first == null) throw new NoSuchElementException();
-        Object o = first.item;
-        first = first.next;
-        first.prev = null;
-        size--;
-        numberchanges++;
-        return o;
+        if (first == null) {
+            throw new NoSuchElementException();
+        }
+        return deleteNode(first);
     }
 
     @Override
     public Object removeLast() {
-        if (last == null) throw new NoSuchElementException();
-        Object o = last.item;
-        last = last.prev;
-        last.next = null;
+        if (last == null) {
+            throw new NoSuchElementException();
+        }
+        return deleteNode(last);
+    }
+
+    private Object deleteNode(Node deletingNode) {
+        Object deletedItem = deletingNode.item;
+
+        if (deletingNode.prev == null) {
+            first = deletingNode.next;
+        } else {
+            deletingNode.prev.next = deletingNode.next;
+        }
+
+        if (deletingNode.next == null) {
+            last = deletingNode.prev;
+        } else {
+            deletingNode.next.prev = deletingNode.prev;
+        }
+
+        deletingNode.prev = null;
+        deletingNode.next = null;
+
         size--;
-        numberchanges++;
-        return o;
+        modificationCount++;
+
+        return deletedItem;
     }
 
     @Override
     public void add(int index, Object item) {
-        if (index > size || index < 0) throw new IndexOutOfBoundsException();
-        if (index == 0) {
-            addFirst(item);
-            return;
-        }
+        checkRangeForAdd(index);
         if (index == size) {
-            addLast(item);
-            return;
+            addLastItem(item);
+        } else {
+            addNotLastItem(index, item);
         }
-        Node node1 = new Node(item);
-        Node obj = first;
-        for (int i = 0; i < index; i++)
-            obj = obj.next;
-        Node olden = obj.prev;
-        olden.next = node1;
-        node1.next = obj;
-        node1.prev = olden;
+    }
+
+    private void checkRangeForAdd(int index) {
+        if ((index < 0) || (index > size)) {
+            throw new IndexOutOfBoundsException();
+        }
+    }
+
+    private void addLastItem(Object item) {
+        Node addingNode = new Node(item, last, null);
+        if (addingNode.prev == null) {
+            first = addingNode;
+        } else {
+            addingNode.prev.next = addingNode;
+        }
+        last = addingNode;
+
         size++;
-        numberchanges++;
+        modificationCount++;
+    }
+
+    private void addNotLastItem(int index, Object item) {
+        Node nextNode = getNode(index);
+        Node prevNode = nextNode.prev;
+
+        Node addingNode = new Node(item, prevNode, nextNode);
+
+        if (addingNode.prev == null) {
+            first = addingNode;
+        } else {
+            addingNode.prev.next = addingNode;
+        }
+
+        if (addingNode.next == null) {
+            last = addingNode;
+        } else {
+            addingNode.next.prev = addingNode;
+        }
+
+        size++;
+        modificationCount++;
     }
 
     @Override
     public void set(int index, Object item) {
-        if (index > size) throw new IndexOutOfBoundsException();
-        if (size == 0)
-            add(item);
-        if (index == size)
+        if (index == size) {
             addLast(item);
-        Node obj = first;
-        for (int i = 0; i < index; i++)
-            obj = obj.next;
-        obj.item = item;
-        numberchanges++;
+        } else {
+            checkRangeFotGet(index);
+            Node currentNode = getNode(index);
+            currentNode.item = item;
+            modificationCount++;
+        }
+    }
+
+    private Node getNode(int index) {
+        Node currentNode;
+        if (index < (size >>> 1)) { // size >>> 1 == size / 2
+            currentNode = getNodeFromLeft(index);
+        } else {
+            currentNode = getNodeFromRight(index);
+        }
+        return currentNode;
+    }
+
+    private Node getNodeFromLeft(int index) {
+        Node result = first;
+        for (int i = 0; i < index; i++) {
+            result = result.next;
+        }
+        return result;
+    }
+
+    private Node getNodeFromRight(int index) {
+        Node result = last;
+        for (int i = size - 1; i > index; i--) {
+            result = result.prev;
+        }
+        return result;
     }
 
     @Override
     public Object get(int index) {
-        if (index >= size) throw new IndexOutOfBoundsException();
-        Node obj = first;
-        for (int i = 0; i < index; i++)
-            obj = obj.next;
-        return obj.item;
+        checkRangeFotGet(index);
+        return getNode(index).item;
     }
 
     @Override
     public int indexOf(Object item) {
-        if (isEmpty()) return List.NOT_FOUND;
-        if (item != null) {
-            Node obj = first;
-            if (obj.item.equals(item)) return 0;
-            for (int i = 1; i < size; i++) {
-                obj = obj.next;
-                if (obj.item == item) return i;
+        Node currentNode = first;
+        if (item == null) {
+            for (int index = 0; index < size; index++) {
+                if (currentNode.item == null) {
+                    return index;
+                }
+                currentNode = currentNode.next;
             }
         } else {
-            Node obj = first;
-            if (obj.item == null) return 0;
-            for (int i = 1; i < size; i++) {
-                obj = obj.next;
-                if (obj.item == null) return i;
+            for (int i = 0; i < size; i++) {
+                if (item.equals(currentNode.item)) {
+                    return i;
+                }
+                currentNode = currentNode.next;
             }
         }
-        return List.NOT_FOUND;
+        return List.INDEX_NOT_FOUND;
     }
 
     @Override
     public int lastIndexOf(Object item) {
-        if (isEmpty()) return List.NOT_FOUND;
-        if (item != null) {
-            Node obj = last;
-            if (obj.item == item) return size - 1;
-            for (int i = size - 2; i >= 0; i--) {
-                obj = obj.prev;
-                if (obj.item == item) return i;
+        Node currentNode = last;
+        if (item == null) {
+            for (int index = size - 1; index >= 0; index--) {
+                if (currentNode.item == null) {
+                    return index;
+                }
+                currentNode = currentNode.prev;
             }
         } else {
-            Node obj = last;
-            if (obj.item == null) return size - 1;
-            for (int i = size - 2; i >= 0; i--) {
-                obj = obj.prev;
-                if (obj.item == null) return i;
+            for (int index = size - 1; index >= 0; index--) {
+                if (item.equals(currentNode.item)) {
+                    return index;
+                }
+                currentNode = currentNode.prev;
             }
         }
-
-        return List.NOT_FOUND;
+        return List.INDEX_NOT_FOUND;
     }
 
     @Override
     public void remove(int index) {
-        if (index >= size || isEmpty()) throw new IndexOutOfBoundsException();
-        if (size == 1) {
-            last = first = null;
-            size = 0;
-            numberchanges++;
-            return;
-        }
-        if (index == 0) {
-            first = first.next;
-            first.prev = null;
-            size--;
-            numberchanges++;
-            return;
-        }
-        if (index == size - 1) {
-            last = last.prev;
-            last.next = null;
-            size--;
-            numberchanges++;
-            return;
-        }
-        Node obj = first;
-        for (
-                int i = 0;
-                i < index; i++)
-            obj = obj.next;
-        obj.prev.next = obj.next;
-        obj.next.prev = obj.prev;
-        size--;
-        numberchanges++;
+        checkRangeFotGet(index);
+        deleteNode(getNode(index));
     }
 
     @Override
     public List subList(int from, int to) {
-        if (from < 0 || to > size || to < 0 || from >= size || isEmpty()) throw new IndexOutOfBoundsException();
-        LinkedList linkedList = new LinkedList();
-        if (from == to)
-            return linkedList;
-        Node node = first;
-        Node node1 = last;
-        int i1 = 0;
-        for (int i = 0; i < from; i++) {
-            node = node.next;
-            i1++;
+        checkRangeForSubList(from, to);
+
+        LinkedList result = new LinkedList();
+        Node currentNode = getNode(from);
+        for (int index = 0; index < (to - from); index++) {
+            result.add(currentNode.item);
+            currentNode = currentNode.next;
         }
-        first = node;
-        first.prev = null;
-        for (int j = size - 1; j > to - 1; j--) {
-            node1 = node1.prev;
-            i1++;
+        return result;
+    }
+
+    private void checkRangeForSubList(int from, int to) {
+        if ((from < 0) || (from >= size) || (to < 0) || (to > size)) {
+            throw new IndexOutOfBoundsException();
         }
-        last = node1;
-        last.next = null;
-        linkedList.last = last;
-        linkedList.first = first;
-        linkedList.size = size - i1;
-        return linkedList;
     }
 
     @Override
@@ -303,98 +308,52 @@ public class LinkedList implements List, Deque {
 
     @Override
     public boolean contains(Object item) {
-        if (size == 0) return false;
-        Node node = first;
         if (item == null) {
-            if (first.item == null) return true;
-            else
-                for (int i = 0; i < size - 1; i++) {
-                    node = node.next;
-                    if (node.item == null) return true;
+            for (Node currentNode = first; currentNode != null; currentNode = currentNode.next) {
+                if (currentNode.item == null) {
+                    return true;
                 }
-            return false;
-        } else {
-            node = first;
-            if (item.equals(node.item)) return true;
-            for (int i = 0; i < size - 1; i++) {
-                node = node.next;
-                if (item.equals(node.item)) return true;
             }
-            return false;
+        } else {
+            for (Node currentNode = first; currentNode != null; currentNode = currentNode.next) {
+                if (item.equals(currentNode.item)) {
+                    return true;
+                }
+            }
         }
+        return false;
     }
 
     @Override
     public boolean add(Object item) {
-        Node node1 = new Node(item);
-        if (first == null) {
-            first = node1;
-            last = node1;
-        } else {
-            node1.prev = last;
-            last.next = node1;
-            last = node1;
-        }
-        size++;
-        numberchanges++;
+        addLast(item);
         return true;
     }
 
     @Override
     public boolean remove(Object item) {
-        if (size == 0) return false;
-        Node node = first;
-        int sz = 0;
-
+        boolean deletedAtLeastOne = false;
+        Node currentNode = first;
         if (item == null) {
-            if (first.item == null) {
-                first = first.next;
-                if (first != null)
-                    first.prev = null;
-
-                sz++;
-            }
-
-            for (int i = 0; i < size - 2; i++) {
-                node = node.next;
-                if (node.item == null) {
-                    node.prev.next = node.next;
-                    node.next.prev = node.prev;
-                    sz++;
+            while (currentNode != null) {
+                Node nextNode = currentNode.next;
+                if (currentNode.item == null) {
+                    deleteNode(currentNode);
+                    deletedAtLeastOne = true;
                 }
-                if (last.item == null) {
-                    last = last.prev;
-                    if (last != null)
-                        last.next = null;
-                    sz++;
-                }
+                currentNode = nextNode;
             }
         } else {
-
-            if (item.equals(first.item)) {
-                first = first.next;
-                first.prev = null;
-                sz++;
-            }
-            for (int i = 0; i < size - 2; i++) {
-                node = node.next;
-                if (item.equals(node.item)) {
-                    node.prev.next = node.next;
-                    node.next.prev = node.prev;
-
-                    sz++;
+            while (currentNode != null) {
+                Node nextNode = currentNode.next;
+                if (item.equals(currentNode.item)) {
+                    deleteNode(currentNode);
+                    deletedAtLeastOne = true;
                 }
+                currentNode = nextNode;
             }
-            if (item.equals(last.item)) {
-                last = last.prev;
-                last.next = null;
-                sz++;
-            }
-
         }
-        size -= sz;
-        numberchanges++;
-        return sz > 0;
+        return deletedAtLeastOne;
     }
 
     @Override
@@ -402,6 +361,6 @@ public class LinkedList implements List, Deque {
         first = null;
         last = null;
         size = 0;
-        numberchanges++;
+        modificationCount++;
     }
 }

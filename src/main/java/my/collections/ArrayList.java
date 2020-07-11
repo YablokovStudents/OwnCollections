@@ -1,22 +1,24 @@
 package my.collections;
 
 
-import java.util.Arrays;
-import java.util.ConcurrentModificationException;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 public class ArrayList implements List {
     private Object[] array;
     private int size;
-    private int numberchanges;
+    private int modificationCount;
 
     public ArrayList() {
         this(10);
     }
 
     public ArrayList(int capacity) {
+        init(capacity);
+    }
+
+    private void init(int capacity) {
         array = new Object[capacity];
+        size = 0;
     }
 
     @Override
@@ -50,38 +52,38 @@ public class ArrayList implements List {
 
     @Override
     public boolean remove(Object item) {
-        boolean xz = false;
-        if (item == null)
+        boolean removedAtLeastOne = false;
+
+        if (item == null) {
             for (int i = 0; i < size; i++) {
                 if (array[i] == null) {
-                    xz = true;
-                    for (int j = i; j < size; j++)
-                        array[j] = array[j + 1];
-                    size--;
-                    i--;
-                    numberchanges++;
+                    shiftItemsToLeft(i--);
+                    removedAtLeastOne = true;
                 }
             }
-        else
+        } else {
             for (int i = 0; i < size; i++) {
-                if (array[i].equals(item)) {
-                    xz = true;
-                    for (int j = i; j < size; j++)
-                        array[j] = array[j + 1];
-                    size--;
-                    i--;
-                    numberchanges++;
+                if (item.equals(array[i])) {
+                    shiftItemsToLeft(i--);
+                    removedAtLeastOne = true;
                 }
             }
-        return xz;
+        }
+        return removedAtLeastOne;
     }
 
+    private void shiftItemsToLeft(int startIndex) {
+        for (int i = startIndex; i < size; i++) {
+            array[i] = array[i + 1];
+        }
+        array[--size] = null;
+        modificationCount++;
+    }
 
     @Override
     public void clear() {
-        array = new Object[10];
-        size = 0;
-        numberchanges++;
+        init(10);
+        modificationCount++;
     }
 
     @Override
@@ -93,12 +95,17 @@ public class ArrayList implements List {
     public void add(int index, Object item) {
         checkRange(index);
         extendArrayIfFull();
-        for (int i = size; i > index; --i) {
+        shiftItemsToRight(index);
+        array[index] = item;
+    }
+
+    private void shiftItemsToRight(int startIndex) {
+        for (int i = size; i > startIndex; --i) {
             array[i] = array[i - 1];
         }
-        array[index] = item;
         size++;
-        numberchanges++;
+        modificationCount++;
+        array[startIndex] = null;
     }
 
     @Override
@@ -108,7 +115,7 @@ public class ArrayList implements List {
         } else {
             checkRange(index);
             array[index] = item;
-            numberchanges++;
+            modificationCount++;
         }
     }
 
@@ -134,63 +141,68 @@ public class ArrayList implements List {
 
     @Override
     public int indexOf(Object item) {
-        if (item != null) {
+        if (item == null) {
+            for (int i = 0; i < size; i++) {
+                if (array[i] == null) {
+                    return i;
+                }
+            }
+        } else {
             for (int i = 0; i < size; i++) {
                 if (item.equals(array[i])) {
                     return i;
                 }
             }
-        } else
-            for (int i = 0; i < size; i++)
-                if (array[i] == null)
-                    return i;
-        return List.NOT_FOUND;
+        }
+        return List.INDEX_NOT_FOUND;
     }
 
     @Override
     public int lastIndexOf(Object item) {
-        if (isEmpty()) return List.NOT_FOUND;
-        if (item != null) {
-            for (int i = size - 1; i >= 0; i--)
-                if (item.equals(array[i])) return i;
-
-        } else
-            for (int i = size - 1; i > 0; i--)
-                if (array[i] == null)
+        if (item == null) {
+            for (int i = size - 1; i > 0; i--) {
+                if (array[i] == null) {
                     return i;
-        return List.NOT_FOUND;
+                }
+            }
+        } else {
+            for (int i = size - 1; i >= 0; i--) {
+                if (item.equals(array[i])) {
+                    return i;
+                }
+            }
+        }
+        return List.INDEX_NOT_FOUND;
     }
 
     @Override
     public void remove(int index) {
-        if (index >= size || index < 0) throw new IndexOutOfBoundsException();
-        else for (int i = index; i < size - 1; i++)
-            array[i] = array[i + 1];
-        size--;
-        numberchanges++;
+        if ((index < 0) || (index >= size)) {
+            throw new IndexOutOfBoundsException();
+        }
+        shiftItemsToLeft(index);
     }
 
     @Override
     public List subList(int from, int to) {
-        if (from >= size || to > size || from > to) throw new IndexOutOfBoundsException();
-        else {
-            ArrayList arrayList = new ArrayList();
-            arrayList.array = Arrays.copyOfRange(this.array, from, to);
-            arrayList.array = Arrays.copyOf(arrayList.array, (arrayList.array.length * 3) / 2 + 1);
-            arrayList.size = to - from;
-            return arrayList;
+        if (from >= size || to > size || from > to) {
+            throw new IndexOutOfBoundsException();
         }
+
+        ArrayList arrayList = new ArrayList(to - from);
+        arrayList.array = Arrays.copyOfRange(array, from, to);
+        arrayList.size = to - from;
+        return arrayList;
     }
 
     @Override
     public Iterator iterator() {
-        return new ArrayListIterator();
+        return new IteratorImpl();
     }
 
-    public class ArrayListIterator implements Iterator {
-        int position;
-        int numberchanges = ArrayList.this.numberchanges;
-
+    private class IteratorImpl implements Iterator {
+        private final int modificationCount = ArrayList.this.modificationCount;
+        private int position;
 
         @Override
         public boolean hasNext() {
@@ -199,11 +211,13 @@ public class ArrayList implements List {
 
         @Override
         public Object next() {
-            if (hasNext()) {
-                if (numberchanges != ArrayList.this.numberchanges) throw new ConcurrentModificationException();
-                return array[position++];
+            if (modificationCount != ArrayList.this.modificationCount) {
+                throw new ConcurrentModificationException();
             }
-            throw new NoSuchElementException();
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            return array[position++];
         }
     }
 }

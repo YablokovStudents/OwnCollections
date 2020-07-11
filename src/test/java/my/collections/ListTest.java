@@ -56,7 +56,7 @@ public class ListTest {
 
     @Test(dataProvider = "lists")
     public void indexOf(List list) {
-        assertEquals(list.indexOf(null), List.NOT_FOUND);
+        assertEquals(list.indexOf(null), List.INDEX_NOT_FOUND);
         list.add(1);
         list.add(2);
         list.add(null);
@@ -70,7 +70,7 @@ public class ListTest {
 
     @Test(dataProvider = "lists")
     public void lastIndexOf(List list) {
-        assertEquals(list.lastIndexOf(1), List.NOT_FOUND);
+        assertEquals(list.lastIndexOf(1), List.INDEX_NOT_FOUND);
         list.add(1);
         list.add(2);
         list.add(4);

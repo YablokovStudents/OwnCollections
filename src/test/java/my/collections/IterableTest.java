@@ -40,15 +40,11 @@ public class IterableTest {
         return collection;
     }
 
-    @Test(dataProvider = "emptyIterables")
+    @Test(dataProvider = "emptyIterables", expectedExceptions = NoSuchElementException.class)
     public void iterator_EmptyCase(Iterable iterable) {
         Iterator iterator = iterable.iterator();
         assertFalse(iterator.hasNext());
-    }
-
-    @Test(dataProvider = "emptyIterables", expectedExceptions = NoSuchElementException.class)
-    public void iterator_OutOfRangeCase(Iterable iterable) {
-        iterable.iterator().next();
+        iterator.next();
     }
 
     @Test(dataProvider = "filledIterables")

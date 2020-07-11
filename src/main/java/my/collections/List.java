@@ -1,7 +1,7 @@
 package my.collections;
 
 public interface List extends Collection {
-    int NOT_FOUND = -1;
+    int INDEX_NOT_FOUND = -1;
 
     void add(int index, Object item);
     void set(int index, Object item);
