@@ -7,8 +7,9 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 public class ArrayList implements List {
-    public Object[] array;
-    public int size;
+    private Object[] array;
+    private int size;
+    private int numberchanges;
 
     public ArrayList() {
         this(10);
@@ -58,6 +59,7 @@ public class ArrayList implements List {
                         array[j] = array[j + 1];
                     size--;
                     i--;
+                    numberchanges++;
                 }
             }
         else
@@ -68,6 +70,7 @@ public class ArrayList implements List {
                         array[j] = array[j + 1];
                     size--;
                     i--;
+                    numberchanges++;
                 }
             }
         return xz;
@@ -78,6 +81,7 @@ public class ArrayList implements List {
     public void clear() {
         array = new Object[10];
         size = 0;
+        numberchanges++;
     }
 
     @Override
@@ -94,6 +98,7 @@ public class ArrayList implements List {
         }
         array[index] = item;
         size++;
+        numberchanges++;
     }
 
     @Override
@@ -103,6 +108,7 @@ public class ArrayList implements List {
         } else {
             checkRange(index);
             array[index] = item;
+            numberchanges++;
         }
     }
 
@@ -157,10 +163,11 @@ public class ArrayList implements List {
 
     @Override
     public void remove(int index) {
-        if (index >= size|| index < 0) throw new IndexOutOfBoundsException();
+        if (index >= size || index < 0) throw new IndexOutOfBoundsException();
         else for (int i = index; i < size - 1; i++)
             array[i] = array[i + 1];
         size--;
+        numberchanges++;
     }
 
     @Override
@@ -181,8 +188,9 @@ public class ArrayList implements List {
     }
 
     public class ArrayListIterator implements Iterator {
-        private int position;
-        Object[] array1;
+        int position;
+        int numberchanges = ArrayList.this.numberchanges;
+
 
         @Override
         public boolean hasNext() {
@@ -191,16 +199,11 @@ public class ArrayList implements List {
 
         @Override
         public Object next() {
-
             if (hasNext()) {
-                if (position == 0)
-                    array1 = Arrays.copyOfRange(array, 0, size);
-
-                if ((Arrays.deepEquals(array1, Arrays.copyOfRange(array, 0, size)))) {
-                    return array[position++];
-                } else
-                    throw new ConcurrentModificationException();
-            } else throw new NoSuchElementException();
+                if (numberchanges != ArrayList.this.numberchanges) throw new ConcurrentModificationException();
+                return array[position++];
+            }
+            throw new NoSuchElementException();
         }
     }
 }

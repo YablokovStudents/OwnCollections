@@ -91,5 +91,6 @@ public class IterableTest {
         list.add(5);
         list.add(null);
         iterator.next();
+
     }
 }

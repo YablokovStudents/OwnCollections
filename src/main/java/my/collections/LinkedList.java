@@ -8,48 +8,29 @@ import java.util.NoSuchElementException;
 public class LinkedList implements List, Deque {
     private Node first;
     private Node last;
-    int size = 0;
+    private int size = 0;
+    private int numberchanges;
 
     public class LinkedIterator implements Iterator {
-        /*Node number = first;
-        Node numberNext = first;*/
+        public int numberchanges = LinkedList.this.numberchanges;
         int position = 0;
         Node node = first;
-        Object[] arr = new Object[size];
 
         @Override
         public boolean hasNext() {
-            /*if (number != null) {
-                number = number.next;*/
             return position < size;
         }
 
         @Override
         public Object next() {
             if (hasNext()) {
-                if (position == 0) {
-                    arr[0] = node.item;
-                    node = node.next;
-                    for (int i = 1; i < size - 1; i++) {
-                        arr[i] = node.item;
-                        node = node.next;
-                    }
-                    arr[size - 1] = node.item;
-                    node = first;
+                if (numberchanges != LinkedList.this.numberchanges) throw new ConcurrentModificationException();
+                if (position == 0){
                     position++;
-                    return first.item;
-                } else {
-                    Node node1 = first;
-                    for (int j = 0; j < arr.length; j++) {
-                        if (arr[j] != null) {
-                            if (!arr[j].equals(node1.item)) throw new ConcurrentModificationException();
-                        } else if (node1.item != null) throw new ConcurrentModificationException();
-                        node1 = node1.next;
-                    }
-                    if (node1 != null) throw new ConcurrentModificationException();
-                    node = node.next;
-                    position++;
+                    return node.item;
                 }
+                node = node.next;
+                position++;
             } else throw new NoSuchElementException();
             return node.item;
         }
@@ -82,6 +63,7 @@ public class LinkedList implements List, Deque {
             node1.next.prev = first;
         }
         size++;
+        numberchanges++;
     }
 
     @Override
@@ -96,6 +78,7 @@ public class LinkedList implements List, Deque {
             last = node1;
         }
         size++;
+        numberchanges++;
     }
 
     @Override
@@ -116,6 +99,7 @@ public class LinkedList implements List, Deque {
             first = first.next;
             first.prev = null;
             size--;
+            numberchanges++;
             return o;
 
         }
@@ -129,6 +113,7 @@ public class LinkedList implements List, Deque {
             last = last.prev;
             last.next = null;
             size--;
+            numberchanges++;
             return o;
         }
         return null;
@@ -141,6 +126,7 @@ public class LinkedList implements List, Deque {
         first = first.next;
         first.prev = null;
         size--;
+        numberchanges++;
         return o;
     }
 
@@ -151,6 +137,7 @@ public class LinkedList implements List, Deque {
         last = last.prev;
         last.next = null;
         size--;
+        numberchanges++;
         return o;
     }
 
@@ -174,6 +161,7 @@ public class LinkedList implements List, Deque {
         node1.next = obj;
         node1.prev = olden;
         size++;
+        numberchanges++;
     }
 
     @Override
@@ -187,6 +175,7 @@ public class LinkedList implements List, Deque {
         for (int i = 0; i < index; i++)
             obj = obj.next;
         obj.item = item;
+        numberchanges++;
     }
 
     @Override
@@ -247,18 +236,21 @@ public class LinkedList implements List, Deque {
         if (size == 1) {
             last = first = null;
             size = 0;
+            numberchanges++;
             return;
         }
         if (index == 0) {
             first = first.next;
             first.prev = null;
             size--;
+            numberchanges++;
             return;
         }
         if (index == size - 1) {
             last = last.prev;
             last.next = null;
             size--;
+            numberchanges++;
             return;
         }
         Node obj = first;
@@ -269,6 +261,7 @@ public class LinkedList implements List, Deque {
         obj.prev.next = obj.next;
         obj.next.prev = obj.prev;
         size--;
+        numberchanges++;
     }
 
     @Override
@@ -343,8 +336,8 @@ public class LinkedList implements List, Deque {
             last = node1;
         }
         size++;
+        numberchanges++;
         return true;
-
     }
 
     @Override
@@ -400,6 +393,7 @@ public class LinkedList implements List, Deque {
 
         }
         size -= sz;
+        numberchanges++;
         return sz > 0;
     }
 
@@ -408,5 +402,6 @@ public class LinkedList implements List, Deque {
         first = null;
         last = null;
         size = 0;
+        numberchanges++;
     }
 }
