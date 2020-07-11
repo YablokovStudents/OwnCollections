@@ -3,11 +3,11 @@ package my.collections;
 /**
  * Интерфейс коллекции объектов.
  */
-public interface Collection extends Iterable {
+public interface Collection<T> extends Iterable<T> {
     int size();
     boolean isEmpty();
-    boolean contains(Object item);
-    boolean add(Object item);
-    boolean remove(Object item);
+    boolean contains(T item);
+    boolean add(T item);
+    boolean remove(T item);
     void clear();
 }

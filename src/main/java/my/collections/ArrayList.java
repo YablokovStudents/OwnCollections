@@ -3,8 +3,8 @@ package my.collections;
 
 import java.util.*;
 
-public class ArrayList implements List {
-    private Object[] array;
+public class ArrayList<T> implements List<T> {
+    private T[] array;
     private int size;
     private int modificationCount;
 
@@ -16,8 +16,9 @@ public class ArrayList implements List {
         init(capacity);
     }
 
+    @SuppressWarnings("unchecked")
     private void init(int capacity) {
-        array = new Object[capacity];
+        array = (T[]) new Object[capacity];
         size = 0;
     }
 

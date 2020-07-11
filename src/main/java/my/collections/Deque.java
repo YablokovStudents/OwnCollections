@@ -1,12 +1,12 @@
 package my.collections;
 
-public interface Deque extends Collection {
-    void addFirst(Object item);
-    void addLast(Object item);
-    Object getFirst();
-    Object getLast();
-    Object pollFirst();
-    Object pollLast();
-    Object removeFirst();
-    Object removeLast();
+public interface Deque<T> extends Collection<T> {
+    void addFirst(T item);
+    void addLast(T item);
+    T getFirst();
+    T getLast();
+    T pollFirst();
+    T pollLast();
+    T removeFirst();
+    T removeLast();
 }

@@ -14,8 +14,8 @@ public class IterableTest {
     @DataProvider(name = "emptyIterables")
     public Object[][] getEmptyIterables() {
         return new Object[][]{
-                {new ArrayList()},
-                {new LinkedList()}
+                {new ArrayList<Integer>()},
+                {new LinkedList<Integer>()}
         };
     }
 
@@ -27,12 +27,12 @@ public class IterableTest {
     @DataProvider(name = "filledLists")
     public Object[][] getFilledLists() {
         return new Object[][]{
-                {getFilled(new ArrayList())},
-                {getFilled(new LinkedList())}
+                {getFilled(new ArrayList<>())},
+                {getFilled(new LinkedList<>())}
         };
     }
 
-    private List getFilled(List collection) {
+    private List<Integer> getFilled(List<Integer> collection) {
         collection.add(1);
         collection.add(2);
         collection.add(3);
@@ -41,36 +41,36 @@ public class IterableTest {
     }
 
     @Test(dataProvider = "emptyIterables", expectedExceptions = NoSuchElementException.class)
-    public void iterator_EmptyCase(Iterable iterable) {
-        Iterator iterator = iterable.iterator();
+    public void iterator_EmptyCase(Iterable<Integer> iterable) {
+        Iterator<Integer> iterator = iterable.iterator();
         assertFalse(iterator.hasNext());
         iterator.next();
     }
 
     @Test(dataProvider = "filledIterables")
-    public void iterator_multipleCase(Iterable iterable) {
-        Iterator iterator1 = iterable.iterator();
-        Iterator iterator2 = iterable.iterator();
+    public void iterator_multipleCase(Iterable<Integer> iterable) {
+        Iterator<Integer> iterator1 = iterable.iterator();
+        Iterator<Integer> iterator2 = iterable.iterator();
 
         assertTrue(iterator1.hasNext());
         assertTrue(iterator2.hasNext());
-        assertEquals(iterator1.next(), 1);
-        assertEquals(iterator2.next(), 1);
+        assertEquals(iterator1.next().intValue(), 1);
+        assertEquals(iterator2.next().intValue(), 1);
 
         assertTrue(iterator1.hasNext());
-        assertEquals(iterator1.next(), 2);
+        assertEquals(iterator1.next().intValue(), 2);
 
         assertTrue(iterator1.hasNext());
-        assertEquals(iterator1.next(), 3);
+        assertEquals(iterator1.next().intValue(), 3);
 
         assertTrue(iterator1.hasNext());
         assertNull(iterator1.next());
 
         assertTrue(iterator2.hasNext());
-        assertEquals(iterator2.next(), 2);
+        assertEquals(iterator2.next().intValue(), 2);
 
         assertTrue(iterator2.hasNext());
-        assertEquals(iterator2.next(), 3);
+        assertEquals(iterator2.next().intValue(), 3);
 
         assertTrue(iterator2.hasNext());
         assertNull(iterator2.next());
@@ -80,13 +80,12 @@ public class IterableTest {
     }
 
     @Test(dataProvider = "filledLists", expectedExceptions = ConcurrentModificationException.class)
-    public void iterator_ConcurrentModificationCase(List list) {
-        Iterator iterator = list.iterator();
+    public void iterator_ConcurrentModificationCase(List<Integer> list) {
+        Iterator<Integer> iterator = list.iterator();
         assertTrue(iterator.hasNext());
-        assertEquals(iterator.next(), 1);
+        assertEquals(iterator.next().intValue(), 1);
         list.add(5);
         list.add(null);
         iterator.next();
-
     }
 }
