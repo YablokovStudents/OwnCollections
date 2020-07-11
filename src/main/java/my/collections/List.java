@@ -8,6 +8,6 @@ public interface List<T> extends Collection<T> {
     T get(int index);
     int indexOf(T item);
     int lastIndexOf(T item);
-    void remove(int index);
+    T remove(int index);
     List<T> subList(int from, int to);
 }

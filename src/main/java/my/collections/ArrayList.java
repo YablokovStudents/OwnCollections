@@ -177,11 +177,13 @@ public class ArrayList<T> implements List<T> {
     }
 
     @Override
-    public void remove(int index) {
+    public T remove(int index) {
         if ((index < 0) || (index >= size)) {
             throw new IndexOutOfBoundsException();
         }
+        T deletedItem = array[index];
         shiftItemsToLeft(index);
+        return deletedItem;
     }
 
     @Override

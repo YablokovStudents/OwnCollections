@@ -272,9 +272,9 @@ public class LinkedList<T> implements List<T>, Deque<T> {
     }
 
     @Override
-    public void remove(int index) {
+    public T remove(int index) {
         checkRangeFotGet(index);
-        deleteNode(getNode(index));
+        return deleteNode(getNode(index));
     }
 
     @Override
