@@ -28,7 +28,7 @@ public class ArrayList<T> implements List<T> {
     }
 
     @Override
-    public boolean contains(Object item) {
+    public boolean contains(T item) {
         if (item == null) {
             for (int i = 0; i < size; ++i) {
                 if (array[i] == null) {
@@ -46,13 +46,13 @@ public class ArrayList<T> implements List<T> {
     }
 
     @Override
-    public boolean add(Object item) {
+    public boolean add(T item) {
         add(size, item);
         return true;
     }
 
     @Override
-    public boolean remove(Object item) {
+    public boolean remove(T item) {
         boolean removedAtLeastOne = false;
 
         if (item == null) {
@@ -93,7 +93,7 @@ public class ArrayList<T> implements List<T> {
     }
 
     @Override
-    public void add(int index, Object item) {
+    public void add(int index,T item) {
         checkRange(index);
         extendArrayIfFull();
         shiftItemsToRight(index);
@@ -110,7 +110,7 @@ public class ArrayList<T> implements List<T> {
     }
 
     @Override
-    public void set(int index, Object item) {
+    public void set(int index, T item) {
         if (index == size) {
             add(item);
         } else {
@@ -133,7 +133,7 @@ public class ArrayList<T> implements List<T> {
     }
 
     @Override
-    public Object get(int index) {
+    public T get(int index) {
         if ((index < 0) || (index >= size)) {
             throw new IndexOutOfBoundsException();
         }
@@ -159,7 +159,7 @@ public class ArrayList<T> implements List<T> {
     }
 
     @Override
-    public int lastIndexOf(Object item) {
+    public int lastIndexOf(T item) {
         if (item == null) {
             for (int i = size - 1; i > 0; i--) {
                 if (array[i] == null) {
@@ -187,23 +187,23 @@ public class ArrayList<T> implements List<T> {
     }
 
     @Override
-    public List subList(int from, int to) {
+    public List<T> subList(int from, int to) {
         if (from >= size || to > size || from > to) {
             throw new IndexOutOfBoundsException();
         }
 
-        ArrayList arrayList = new ArrayList(to - from);
+        ArrayList<T> arrayList = new ArrayList<>(to - from);
         arrayList.array = Arrays.copyOfRange(array, from, to);
         arrayList.size = to - from;
         return arrayList;
     }
 
     @Override
-    public Iterator iterator() {
+    public Iterator<T> iterator() {
         return new IteratorImpl();
     }
 
-    private class IteratorImpl implements Iterator {
+    private class IteratorImpl implements Iterator<T> {
         private final int modificationCount = ArrayList.this.modificationCount;
         private int position;
 
@@ -213,7 +213,7 @@ public class ArrayList<T> implements List<T> {
         }
 
         @Override
-        public Object next() {
+        public T next() {
             if (modificationCount != ArrayList.this.modificationCount) {
                 throw new ConcurrentModificationException();
             }

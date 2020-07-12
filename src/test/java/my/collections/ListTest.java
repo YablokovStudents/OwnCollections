@@ -12,13 +12,13 @@ public class ListTest {
     @DataProvider(name = "lists")
     public Object[][] getLists() {
         return new Object[][]{
-                {new ArrayList()},
-                {new LinkedList()}
+                {new ArrayList<Integer>()},
+                {new LinkedList<Integer>()}
         };
     }
 
     @Test(dataProvider = "lists")
-    public void add(List list) {
+    public void add(List<Integer> list) {
         list.add(0, null);
         assertEquals(list.get(0), null);
         list.add(1);
@@ -26,13 +26,13 @@ public class ListTest {
         list.add(3);
         list.add(4);
         list.add(1, 5);
-        assertEquals(list.get(1), 5);
+        assertEquals(list.get(1).intValue(), 5);
     }
 
     @Test(dataProvider = "lists")
-    public void set(List list) {
+    public void set(List<Integer> list) {
         list.set(0, 1);
-        assertEquals(list.get(0), 1);
+        assertEquals(list.get(0).intValue(), 1);
         list.add(2);
         list.add(3);
         list.add(4);
@@ -40,22 +40,22 @@ public class ListTest {
         list.set(1, null);
         list.set(5, 7);
         assertNull(list.get(1));
-        assertEquals(list.get(5), 7);
+        assertEquals(list.get(5).intValue(), 7);
     }
 
     @Test(dataProvider = "lists")
-    public void subList(List list) {
+    public void subList(List<Integer> list) {
         list.add(1);
         list.add(2);
         list.add(3);
         list.add(4);
         list.add(5);
-        List subList = list.subList(0, 5);
+        List<Integer> subList = list.subList(0, 5);
         assertEquals(subList.size(), 5);
     }
 
     @Test(dataProvider = "lists")
-    public void indexOf(List list) {
+    public void indexOf(List<Integer> list) {
         assertEquals(list.indexOf(null), List.INDEX_NOT_FOUND);
         list.add(1);
         list.add(2);
@@ -69,7 +69,7 @@ public class ListTest {
     }
 
     @Test(dataProvider = "lists")
-    public void lastIndexOf(List list) {
+    public void lastIndexOf(List<Integer> list) {
         assertEquals(list.lastIndexOf(1), List.INDEX_NOT_FOUND);
         list.add(1);
         list.add(2);
@@ -83,7 +83,7 @@ public class ListTest {
     }
 
     @Test(dataProvider = "lists")
-    public void remove(List list) {
+    public void remove(List<Integer> list) {
         list.add(1);
         list.add(2);
         list.add(4);
