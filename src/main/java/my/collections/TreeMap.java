@@ -1,36 +1,29 @@
 package my.collections;
 
 import java.util.LinkedList;
-import java.util.Queue;
+import java.util.*;
 
 public class TreeMap<K, V> implements Map<K, V> {
-    public int size;
-    public DataImpl<K, V> root;
+    private int size;
+    private Node<K, V> root;
+    private Comparator<K> comparator;
 
-    public TreeMap() {
-    }
-
-    public static class DataImpl<Integer, V> implements Entry<Integer, V>, Comparable<Entry<Integer, V>> {
-        private Integer Key;
+    private static class Node<K, V> implements Entry<K, V> {
+        private final K key;
         private V value;
-        private DataImpl<Integer, V> parent;
-        private DataImpl<Integer, V> leftChild;
-        private DataImpl<Integer, V> rightChild;
+        private Node<K, V> parent;
+        private Node<K, V> left;
+        private Node<K, V> right;
 
-        public DataImpl(Integer key, V value, DataImpl<Integer, V> parent) {
-            Key = key;
+        public Node(K key, V value, Node<K, V> parent) {
+            this.key = key;
             this.value = value;
             this.parent = parent;
         }
 
         @Override
-        public Integer getKey() {
-            return Key;
-        }
-
-        @Override
-        public void setKey(Integer key) {
-            this.Key = key;
+        public K getKey() {
+            return key;
         }
 
         @Override
@@ -42,11 +35,13 @@ public class TreeMap<K, V> implements Map<K, V> {
         public void setValue(V value) {
             this.value = value;
         }
+    }
 
-        @Override
-        public int compareTo(Entry<Integer, V> o) {
-            return java.lang.Integer.compare((java.lang.Integer) this.Key, (java.lang.Integer) o.getKey());
-        }
+    public TreeMap() {
+    }
+
+    public TreeMap(Comparator<K> comparator) {
+        this.comparator = comparator;
     }
 
     @Override
@@ -60,89 +55,104 @@ public class TreeMap<K, V> implements Map<K, V> {
     }
 
     @Override
-    public boolean containsKey(Object key) {
-        if (root == null) return false;
-        DataImpl<K, V> current = root;
-        DataImpl<K, V> current1 = new DataImpl<K, V>((K) key, null, null);
-        while (current.compareTo(current1) != 0) {
-            if (current.compareTo(current1) > 0) {
-                current = current.leftChild;
+    public boolean containsKey(K key) {
+        return getEntry(key) != null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Entry<K, V> getEntry(K key) {
+        if (comparator != null) {
+            return getEntryByComparator(key);
+        } else if (key == null) {
+            throw new NullPointerException();
+        } else if (!(key instanceof Comparable)) {
+            throw new IllegalArgumentException();
+        } else {
+            return getEntryByComparableKey((Comparable<K>) key);
+        }
+    }
+
+    private Entry<K, V> getEntryByComparator(K key) {
+        Node<K, V> current = root;
+        while (current != null) {
+            int compareResult = comparator.compare(key, current.key);
+            if (compareResult > 0) {
+                current = current.right;
+            } else if (compareResult < 0) {
+                current = current.left;
             } else {
-                current = current.rightChild;
-            }
-            if (current == null) {
-                return false;
+                return current;
             }
         }
-        return true;
+        return null;
+    }
 
+    private Entry<K, V> getEntryByComparableKey(Comparable<K> key) {
+        Node<K, V> current = root;
+        while (current != null) {
+            int compareResult = key.compareTo(current.key);
+            if (compareResult > 0) {
+                current = current.right;
+            } else if (compareResult < 0) {
+                current = current.left;
+            } else {
+                return current;
+            }
+        }
+        return null;
     }
 
     @Override
-    public boolean containsValue(Object value) {
-        if (root == null) return false;
-        Queue<DataImpl<K, V>> queue = new LinkedList<>();
-        if (root.leftChild != null) queue.add(root.leftChild);
-        if (root.rightChild != null) queue.add(root.rightChild);
-        DataImpl<K, V> current = queue.poll();
-        do {
-            if (value == null) {
-                if (current.value == null) return true;
+    public boolean containsValue(V value) {
+        if (value == null) {
+            for (Entry<K, V> entry : entrySet()) {
+                if (entry.getValue() == null) {
+                    return true;
+                }
             }
-            if (current.value.equals(value)) return true;
-            if (current.leftChild != null) queue.add(current.leftChild);
-            if (current.rightChild != null) queue.add(current.rightChild);
+        } else {
+            for (Entry<K, V> entry : entrySet()) {
+                if (value.equals(entry.getValue())) {
+                    return true;
+                }
+            }
         }
-        while ((current = queue.poll()) != null);
         return false;
     }
 
     @Override
-    public Object get(Object key) {
-        if (key == null) throw new NullPointerException();
-        if (root == null) return null;
-        DataImpl<K, V> current = root;
-        DataImpl<K, V> current1 = new DataImpl<K, V>((K) key, null, null);
-        while (current.compareTo(current1) != 0) {
-            if (current.compareTo(current1) > 0) {
-                current = current.leftChild;
-            } else {
-                current = current.rightChild;
-            }
-            if (current == null) {
-                return null;
-            }
-        }
-        return current.value;
+    public V get(K key) {
+        Entry<K, V> entry = getEntry(key);
+        return (entry == null) ? null : entry.getValue();
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public V put(Object key, Object value) {
         if (key == null) throw new NullPointerException();
-        DataImpl<K, V> node = new DataImpl<K, V>((K) key, (V) value, null);
+        Node<K, V> node = new Node<K, V>((K) key, (V) value, null);
         if (root == null) {
             root = node;
             size++;
             return null;
         }
-        DataImpl<K, V> current = root;
-        DataImpl<K, V> prev = null;
+        Node<K, V> current = root;
+        Node<K, V> prev = null;
         while (true) {
             prev = current;
             if (prev.compareTo(node) > 0) {
-                current = current.leftChild;
+                current = current.left;
                 if (current == null) {
-                    prev.leftChild = node;
+                    prev.left = node;
                     node.parent = prev;
                     size++;
                     return null;
                 }
             }
             if (prev.compareTo(node) < 0) {
-                current = current.rightChild;
+                current = current.right;
                 if (current == null) {
-                    prev.rightChild = node;
+                    prev.right = node;
                     node.parent = prev;
                     size++;
                     return null;
@@ -160,61 +170,61 @@ public class TreeMap<K, V> implements Map<K, V> {
     @Override
     public Object remove(Object key) {
         if (root == null) return null;
-        DataImpl<K, V> node = new DataImpl<K, V>((K) key, (V) null, null);
+        Node<K, V> node = new Node<K, V>((K) key, (V) null, null);
         if (root.compareTo(node) == 0) {
             node = root;
             clear();
             return node.value;
         }
-        DataImpl<K, V> current = root;
-        DataImpl<K, V> prev = null;
+        Node<K, V> current = root;
+        Node<K, V> prev = null;
         while (true) {
             prev = current;
             if (prev.compareTo(node) > 0) {
-                current = current.leftChild;
+                current = current.left;
                 if (current == null) {
                     return null;
                 }
             } else if (prev.compareTo(node) < 0) {
-                current = current.rightChild;
+                current = current.right;
                 if (current == null) {
                     return null;
                 }
             } else {
-                if (prev.parent.rightChild != null && prev.parent.rightChild.compareTo(prev) == 0) {
-                    prev.parent.rightChild = null;
+                if (prev.parent.right != null && prev.parent.right.compareTo(prev) == 0) {
+                    prev.parent.right = null;
                     size--;
                 }
-                if (prev.parent.leftChild != null && prev.parent.leftChild.compareTo(prev) == 0) {
-                    prev.parent.leftChild = null;
+                if (prev.parent.left != null && prev.parent.left.compareTo(prev) == 0) {
+                    prev.parent.left = null;
                     size--;
                 }
-                Queue<DataImpl<K, V>> queue = new LinkedList<>();
-                if (prev.leftChild != null) queue.add(prev.leftChild);
-                if (prev.rightChild != null) queue.add(prev.rightChild);
-                DataImpl<K, V> addElement = queue.poll();
+                Queue<Node<K, V>> queue = new LinkedList<>();
+                if (prev.left != null) queue.add(prev.left);
+                if (prev.right != null) queue.add(prev.right);
+                Node<K, V> addElement = queue.poll();
                 if (addElement != null) {
-                    DataImpl<K, V> addCurrent = null;
-                    DataImpl<K, V> prev1 = null;
+                    Node<K, V> addCurrent = null;
+                    Node<K, V> prev1 = null;
                     do {
-                        if (addElement.leftChild != null) queue.add(addElement.leftChild);
-                        if (addElement.rightChild != null) queue.add(addElement.rightChild);
+                        if (addElement.left != null) queue.add(addElement.left);
+                        if (addElement.right != null) queue.add(addElement.right);
                         addCurrent = addElement.parent.parent;
                         prev1 = null;
                         while (true) {
                             prev1 = addCurrent;
                             if (prev1.compareTo(addElement) > 0) {
-                                addCurrent = addCurrent.leftChild;
+                                addCurrent = addCurrent.left;
                                 if (addCurrent == null) {
-                                    prev1.leftChild = addElement;
+                                    prev1.left = addElement;
                                     addElement.parent = prev1;
                                     break;
                                 }
                             } else if (prev1.compareTo(addElement) < 0) {
                                 // System.out.println(33);
-                                addCurrent = addCurrent.rightChild;
+                                addCurrent = addCurrent.right;
                                 if (addCurrent == null) {
-                                    prev1.rightChild = addElement;
+                                    prev1.right = addElement;
                                     addElement.parent = prev1;
                                     break;
                                 }
@@ -239,14 +249,14 @@ public class TreeMap<K, V> implements Map<K, V> {
         Collection<V> values = new ArrayList<>();
         if (isEmpty()) return values;
         values.add(root.value);
-        Queue<DataImpl<K, V>> queue = new LinkedList<>();
-        if (root.leftChild != null) queue.add(root.leftChild);
-        if (root.rightChild != null) queue.add(root.rightChild);
-        DataImpl<K, V> current = queue.poll();
+        Queue<Node<K, V>> queue = new LinkedList<>();
+        if (root.left != null) queue.add(root.left);
+        if (root.right != null) queue.add(root.right);
+        Node<K, V> current = queue.poll();
         do {
             values.add(current.value);
-            if (current.leftChild != null) queue.add(current.leftChild);
-            if (current.rightChild != null) queue.add(current.rightChild);
+            if (current.left != null) queue.add(current.left);
+            if (current.right != null) queue.add(current.right);
         }
         while ((current = queue.poll()) != null);
         return values;
@@ -257,14 +267,14 @@ public class TreeMap<K, V> implements Map<K, V> {
         Collection<K> values = new ArrayList<>();
         if (isEmpty()) return values;
         values.add(root.getKey());
-        Queue<DataImpl<K, V>> queue = new LinkedList<>();
-        if (root.leftChild != null) queue.add(root.leftChild);
-        if (root.rightChild != null) queue.add(root.rightChild);
-        DataImpl<K, V> current = queue.poll();
+        Queue<Node<K, V>> queue = new LinkedList<>();
+        if (root.left != null) queue.add(root.left);
+        if (root.right != null) queue.add(root.right);
+        Node<K, V> current = queue.poll();
         do {
             values.add(current.getKey());
-            if (current.leftChild != null) queue.add(current.leftChild);
-            if (current.rightChild != null) queue.add(current.rightChild);
+            if (current.left != null) queue.add(current.left);
+            if (current.right != null) queue.add(current.right);
         }
         while ((current = queue.poll()) != null);
         return values;
@@ -276,14 +286,14 @@ public class TreeMap<K, V> implements Map<K, V> {
         Collection<Entry<K, V>> values = new ArrayList<>();
         if (isEmpty()) return values;
         values.add(root);
-        Queue<DataImpl<K, V>> queue = new LinkedList<>();
-        if (root.leftChild != null) queue.add(root.leftChild);
-        if (root.rightChild != null) queue.add(root.rightChild);
-        DataImpl<K, V> current = queue.poll();
+        Queue<Node<K, V>> queue = new LinkedList<>();
+        if (root.left != null) queue.add(root.left);
+        if (root.right != null) queue.add(root.right);
+        Node<K, V> current = queue.poll();
         do {
             values.add(current);
-            if (current.leftChild != null) queue.add(current.leftChild);
-            if (current.rightChild != null) queue.add(current.rightChild);
+            if (current.left != null) queue.add(current.left);
+            if (current.right != null) queue.add(current.right);
         }
         while ((current = queue.poll()) != null);
         return values;

@@ -3,11 +3,11 @@ package my.collections;
 public interface Map<K, V> {
     int size();
     boolean isEmpty();
-    boolean containsKey(Object key);
-    boolean containsValue(Object value);
-    Object get(Object key);
-    Object put(Object key, Object value);
-    Object remove(Object key);
+    boolean containsKey(K key);
+    boolean containsValue(V value);
+    V get(K key);
+    V put(K key, V value);
+    V remove(K key);
     void clear();
     Collection<V> values();
     Collection<K> keySet();
@@ -15,14 +15,7 @@ public interface Map<K, V> {
 
     interface Entry<K, V> {
         K getKey();
-        void setKey(K key);
-
         V getValue();
         void setValue(V value);
-    }
-
-    interface Data<K,V>{
-
-
     }
 }
