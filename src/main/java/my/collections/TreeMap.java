@@ -280,36 +280,32 @@ public class TreeMap<K, V> implements Map<K, V> {
 
     @Override
     public Collection<V> values() {
-        Collection<V> values = new ArrayList<>(size);
-        if (isEmpty()) return values;
+        Collection<V> collection = new ArrayList<>(size);
+        addSubValues(collection, root);
+        return collection;
+    }
 
-        Node<K, V> current = queue.poll();
-        do {
-            values.add(current.value);
-            if (current.left != null) queue.add(current.left);
-            if (current.right != null) queue.add(current.right);
-        }
-        while ((current = queue.poll()) != null);
-        return values;
+    private void addSubValues(Collection<V> collection, Node<K, V> node) {
+        if (node == null) return;
+
+        addSubValues(collection, node.left);
+        collection.add(node.value);
+        addSubValues(collection, node.right);
     }
 
     @Override
     public Collection<K> keySet() {
-        Collection<K> values = new ArrayList<>();
-        if (isEmpty()) return values;
-        values.add(root.getKey());
-        Queue<Node<K, V>> queue = new LinkedList<>();
-        if (root.left != null) queue.add(root.left);
-        if (root.right != null) queue.add(root.right);
-        Node<K, V> current = queue.poll();
-        do {
-            values.add(current.getKey());
-            if (current.left != null) queue.add(current.left);
-            if (current.right != null) queue.add(current.right);
-        }
-        while ((current = queue.poll()) != null);
-        return values;
+        Collection<K> collection = new ArrayList<>(size);
+        addSubKeys(collection, root);
+        return collection;
+    }
 
+    private void addSubKeys(Collection<K> collection, Node<K, V> node) {
+        if (node == null) return;
+
+        addSubKeys(collection, node.left);
+        collection.add(node.key);
+        addSubKeys(collection, node.right);
     }
 
     @Override
