@@ -179,72 +179,42 @@ public class TreeMap<K, V> implements Map<K, V> {
 
         // ToDo: заменить реализацию обговоренным вариантом
         if (root == null) return null;
-        Node<K, V> node = new Node<K, V>((K) key, (V) null, null);
-        if (root.compareTo(node) == 0) {
-            node = root;
-            clear();
-            return node.value;
-        }
-        Node<K, V> current = root;
-        Node<K, V> prev = null;
-        while (true) {
-            prev = current;
-            if (prev.compareTo(node) > 0) {
+        Node<K, V> parent = null;
+        Node<K, V> current = (Node<K, V>) entry;
+        if (current.right != null) {
+            current = current.right;
+            while (true) {
+                parent = current;
                 current = current.left;
                 if (current == null) {
-                    return null;
+                    if (((Node<K, V>) entry).parent.right.equals(entry)) ((Node<K, V>) entry).parent.right = parent;
+                    if (((Node<K, V>) entry).parent.left.equals(entry)) ((Node<K, V>) entry).parent.left = parent;
+                    parent.parent = ((Node<K, V>) entry).parent;
+                    return entry.getValue();
                 }
-            } else if (prev.compareTo(node) < 0) {
+            }
+        } else if (current.left != null) {
+            current = current.left;
+            while (true) {
+                parent = current;
                 current = current.right;
                 if (current == null) {
-                    return null;
+                    if (((Node<K, V>) entry).parent.right.equals(entry)) ((Node<K, V>) entry).parent.right = parent;
+                    if (((Node<K, V>) entry).parent.left.equals(entry)) ((Node<K, V>) entry).parent.left = parent;
+                    parent.parent = ((Node<K, V>) entry).parent;
+                    return entry.getValue();
                 }
-            } else {
-                if (prev.parent.right != null && prev.parent.right.compareTo(prev) == 0) {
-                    prev.parent.right = null;
-                    size--;
-                }
-                if (prev.parent.left != null && prev.parent.left.compareTo(prev) == 0) {
-                    prev.parent.left = null;
-                    size--;
-                }
-                Queue<Node<K, V>> queue = new LinkedList<>();
-                if (prev.left != null) queue.add(prev.left);
-                if (prev.right != null) queue.add(prev.right);
-                Node<K, V> addElement = queue.poll();
-                if (addElement != null) {
-                    Node<K, V> addCurrent = null;
-                    Node<K, V> prev1 = null;
-                    do {
-                        if (addElement.left != null) queue.add(addElement.left);
-                        if (addElement.right != null) queue.add(addElement.right);
-                        addCurrent = addElement.parent.parent;
-                        prev1 = null;
-                        while (true) {
-                            prev1 = addCurrent;
-                            if (prev1.compareTo(addElement) > 0) {
-                                addCurrent = addCurrent.left;
-                                if (addCurrent == null) {
-                                    prev1.left = addElement;
-                                    addElement.parent = prev1;
-                                    break;
-                                }
-                            } else if (prev1.compareTo(addElement) < 0) {
-                                // System.out.println(33);
-                                addCurrent = addCurrent.right;
-                                if (addCurrent == null) {
-                                    prev1.right = addElement;
-                                    addElement.parent = prev1;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    while ((addElement = queue.poll()) != null);
-                }
-                return prev.value;
             }
+
+        } else if (((Node<K, V>) entry).parent.right.equals(entry)) {
+            ((Node<K, V>) entry).parent.right = null;
+            return ((Node<K, V>) entry).value;
         }
+        if (((Node<K, V>) entry).parent.left.equals(entry)) {
+            ((Node<K, V>) entry).parent.left = null;
+            return ((Node<K, V>) entry).value;
+        }
+        return null;
     }
 
     @Override
