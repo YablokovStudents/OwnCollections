@@ -1,8 +1,7 @@
 package my.collections;
 
-import java.util.Comparator;
 import java.util.LinkedList;
-import java.util.Queue;
+import java.util.*;
 
 public class TreeMap<K, V> implements Map<K, V> {
     private int size;
@@ -69,22 +68,22 @@ public class TreeMap<K, V> implements Map<K, V> {
 
     @Override
     public boolean containsKey(K key) {
-        return getEntry(key) != null;
+        return getNode(key) != null;
     }
 
-    private Entry<K, V> getEntry(K key) {
+    private Node<K, V> getNode(K key) {
         if (!(comparator instanceof EmbeddedComparator)) {
-            return getEntryByComparator(key);
+            return getNodeByComparator(key);
         } else if (key == null) {
             throw new NullPointerException();
         } else if (!(key instanceof Comparable)) {
             throw new IllegalArgumentException();
         } else {
-            return getEntryByComparator(key);
+            return getNodeByComparator(key);
         }
     }
 
-    private Entry<K, V> getEntryByComparator(K key) {
+    private Node<K, V> getNodeByComparator(K key) {
         Node<K, V> current = root;
         while (current != null) {
             int compareResult = comparator.compare(key, current.key);
@@ -119,7 +118,7 @@ public class TreeMap<K, V> implements Map<K, V> {
 
     @Override
     public V get(K key) {
-        Entry<K, V> entry = getEntry(key);
+        Entry<K, V> entry = getNode(key);
         return (entry == null) ? null : entry.getValue();
     }
 
@@ -172,49 +171,105 @@ public class TreeMap<K, V> implements Map<K, V> {
 
     @Override
     public V remove(K key) {
-        Entry<K, V> entry = getEntry(key);
-        if (entry == null) {
+        Node<K, V> deletingNode = getNode(key);
+        if (deletingNode == null) {
             return null;
         }
 
-        // ToDo: заменить реализацию обговоренным вариантом
-        if (root == null) return null;
-        Node<K, V> parent = null;
-        Node<K, V> current = (Node<K, V>) entry;
-        if (current.right != null) {
-            current = current.right;
-            while (true) {
-                parent = current;
-                current = current.left;
-                if (current == null) {
-                    if (((Node<K, V>) entry).parent.right.equals(entry)) ((Node<K, V>) entry).parent.right = parent;
-                    if (((Node<K, V>) entry).parent.left.equals(entry)) ((Node<K, V>) entry).parent.left = parent;
-                    parent.parent = ((Node<K, V>) entry).parent;
-                    return entry.getValue();
-                }
+        V deletedNodeValue = deletingNode.value;
+        if (deletingNode.right != null) {
+            replaceNodeBySmallestFromRightSide(deletingNode);
+        } else if (deletingNode.left != null) {
+            replaceNodeByGreatestFromLeftSide(deletingNode);
+        } else {
+            if (deletingNode.parent.right == deletingNode) {
+                deletingNode.parent.right = null;
+            } else {
+                deletingNode.parent.left = null;
             }
-        } else if (current.left != null) {
-            current = current.left;
-            while (true) {
-                parent = current;
-                current = current.right;
-                if (current == null) {
-                    if (((Node<K, V>) entry).parent.right.equals(entry)) ((Node<K, V>) entry).parent.right = parent;
-                    if (((Node<K, V>) entry).parent.left.equals(entry)) ((Node<K, V>) entry).parent.left = parent;
-                    parent.parent = ((Node<K, V>) entry).parent;
-                    return entry.getValue();
-                }
+            --size;
+            clearLinks(deletingNode);
+        }
+        return deletedNodeValue;
+    }
+
+    private void replaceNodeBySmallestFromRightSide(Node<K, V> deletingNode) {
+        Node<K, V> smallestNodeFromRightSide = deletingNode.right;
+        while (smallestNodeFromRightSide.left != null) {
+            smallestNodeFromRightSide = smallestNodeFromRightSide.left;
+        }
+
+        if (smallestNodeFromRightSide.parent != deletingNode) {
+            smallestNodeFromRightSide.parent.left = smallestNodeFromRightSide.right;
+            if (smallestNodeFromRightSide.right != null) {
+                smallestNodeFromRightSide.right.parent = smallestNodeFromRightSide.parent;
             }
 
-        } else if (((Node<K, V>) entry).parent.right.equals(entry)) {
-            ((Node<K, V>) entry).parent.right = null;
-            return ((Node<K, V>) entry).value;
+            smallestNodeFromRightSide.right = deletingNode.right;
+            deletingNode.right.parent = smallestNodeFromRightSide;
         }
-        if (((Node<K, V>) entry).parent.left.equals(entry)) {
-            ((Node<K, V>) entry).parent.left = null;
-            return ((Node<K, V>) entry).value;
+
+        smallestNodeFromRightSide.parent = deletingNode.parent;
+        if (deletingNode.parent != null) {
+            if (deletingNode.parent.left == deletingNode) {
+                deletingNode.parent.left = smallestNodeFromRightSide;
+            } else {
+                deletingNode.parent.right = smallestNodeFromRightSide;
+            }
+        } else {
+            root = smallestNodeFromRightSide;
         }
-        return null;
+
+        smallestNodeFromRightSide.left = deletingNode.left;
+        if (deletingNode.left != null) {
+            deletingNode.left.parent = smallestNodeFromRightSide;
+        }
+
+        --size;
+        clearLinks(deletingNode);
+    }
+
+    private void replaceNodeByGreatestFromLeftSide(Node<K, V> deletingNode) {
+        Node<K, V> greatestNodeFromLeftSide = deletingNode.left;
+        while (greatestNodeFromLeftSide.right != null) {
+            greatestNodeFromLeftSide = greatestNodeFromLeftSide.right;
+        }
+
+        if (greatestNodeFromLeftSide.parent != deletingNode) {
+            greatestNodeFromLeftSide.parent.right = greatestNodeFromLeftSide.left;
+            if (greatestNodeFromLeftSide.left != null) {
+                greatestNodeFromLeftSide.left.parent = greatestNodeFromLeftSide.parent;
+            }
+
+            greatestNodeFromLeftSide.left = deletingNode.left;
+            deletingNode.left.parent = greatestNodeFromLeftSide;
+        }
+
+        greatestNodeFromLeftSide.parent = deletingNode.parent;
+        if (deletingNode.parent != null) {
+            if (deletingNode.parent.right == deletingNode) {
+                deletingNode.parent.right = greatestNodeFromLeftSide;
+            } else {
+                deletingNode.parent.left = greatestNodeFromLeftSide;
+            }
+        } else {
+            root = greatestNodeFromLeftSide;
+        }
+
+        greatestNodeFromLeftSide.right = deletingNode.right;
+        if (deletingNode.right != null) {
+            deletingNode.right.parent = greatestNodeFromLeftSide;
+        }
+
+        --size;
+        clearLinks(deletingNode);
+    }
+
+    private void clearLinks(Node<K, V> deletingNode) {
+        deletingNode.parent = null;
+        deletingNode.left = null;
+        deletingNode.right = null;
+        deletingNode.value = null;
     }
 
     @Override
@@ -225,12 +280,9 @@ public class TreeMap<K, V> implements Map<K, V> {
 
     @Override
     public Collection<V> values() {
-        Collection<V> values = new ArrayList<>();
+        Collection<V> values = new ArrayList<>(size);
         if (isEmpty()) return values;
-        values.add(root.value);
-        Queue<Node<K, V>> queue = new LinkedList<>();
-        if (root.left != null) queue.add(root.left);
-        if (root.right != null) queue.add(root.right);
+
         Node<K, V> current = queue.poll();
         do {
             values.add(current.value);
@@ -262,19 +314,16 @@ public class TreeMap<K, V> implements Map<K, V> {
 
     @Override
     public Collection<Entry<K, V>> entrySet() {
-        Collection<Entry<K, V>> values = new ArrayList<>();
-        if (isEmpty()) return values;
-        values.add(root);
-        Queue<Node<K, V>> queue = new LinkedList<>();
-        if (root.left != null) queue.add(root.left);
-        if (root.right != null) queue.add(root.right);
-        Node<K, V> current = queue.poll();
-        do {
-            values.add(current);
-            if (current.left != null) queue.add(current.left);
-            if (current.right != null) queue.add(current.right);
-        }
-        while ((current = queue.poll()) != null);
-        return values;
+        Collection<Entry<K, V>> collection = new ArrayList<>(size);
+        addSubNodes(collection, root);
+        return collection;
+    }
+
+    private void addSubNodes(Collection<Entry<K, V>> collection, Node<K, V> node) {
+        if (node == null) return;
+
+        addSubNodes(collection, node.left);
+        collection.add(node);
+        addSubNodes(collection, node.right);
     }
 }
