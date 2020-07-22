@@ -1,12 +1,13 @@
 package my.collections;
 
+import java.util.Comparator;
 import java.util.LinkedList;
-import java.util.*;
+import java.util.Queue;
 
 public class TreeMap<K, V> implements Map<K, V> {
     private int size;
     private Node<K, V> root;
-    private Comparator<K> comparator;
+    private final Comparator<K> comparator;
 
     private static class Node<K, V> implements Entry<K, V> {
         private final K key;
@@ -37,10 +38,22 @@ public class TreeMap<K, V> implements Map<K, V> {
         }
     }
 
+    private static class EmbeddedComparator<K extends Comparable<K>> implements Comparator<K> {
+        @Override
+        public int compare(K key1, K key2) {
+            return key1.compareTo(key2);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     public TreeMap() {
+        this((Comparator<K>) new EmbeddedComparator<>());
     }
 
     public TreeMap(Comparator<K> comparator) {
+        if (comparator == null) {
+            throw new NullPointerException();
+        }
         this.comparator = comparator;
     }
 
@@ -59,16 +72,15 @@ public class TreeMap<K, V> implements Map<K, V> {
         return getEntry(key) != null;
     }
 
-    @SuppressWarnings("unchecked")
     private Entry<K, V> getEntry(K key) {
-        if (comparator != null) {
+        if (!(comparator instanceof EmbeddedComparator)) {
             return getEntryByComparator(key);
         } else if (key == null) {
             throw new NullPointerException();
         } else if (!(key instanceof Comparable)) {
             throw new IllegalArgumentException();
         } else {
-            return getEntryByComparableKey((Comparable<K>) key);
+            return getEntryByComparator(key);
         }
     }
 
@@ -76,21 +88,6 @@ public class TreeMap<K, V> implements Map<K, V> {
         Node<K, V> current = root;
         while (current != null) {
             int compareResult = comparator.compare(key, current.key);
-            if (compareResult > 0) {
-                current = current.right;
-            } else if (compareResult < 0) {
-                current = current.left;
-            } else {
-                return current;
-            }
-        }
-        return null;
-    }
-
-    private Entry<K, V> getEntryByComparableKey(Comparable<K> key) {
-        Node<K, V> current = root;
-        while (current != null) {
-            int compareResult = key.compareTo(current.key);
             if (compareResult > 0) {
                 current = current.right;
             } else if (compareResult < 0) {
@@ -126,49 +123,61 @@ public class TreeMap<K, V> implements Map<K, V> {
         return (entry == null) ? null : entry.getValue();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public V put(Object key, Object value) {
-        if (key == null) throw new NullPointerException();
-        Node<K, V> node = new Node<K, V>((K) key, (V) value, null);
+    public V put(K key, V value) {
+        if (!(comparator instanceof EmbeddedComparator)) {
+            return putValueByComparator(key, value);
+        } else if (key == null) {
+            throw new NullPointerException();
+        } else if (!(key instanceof Comparable)) {
+            throw new IllegalArgumentException();
+        } else {
+            return putValueByComparator(key, value);
+        }
+    }
+
+    private V putValueByComparator(K key, V value) {
         if (root == null) {
-            root = node;
+            root = new Node<>(key, value, null);
             size++;
             return null;
         }
+
         Node<K, V> current = root;
-        Node<K, V> prev = null;
         while (true) {
-            prev = current;
-            if (prev.compareTo(node) > 0) {
-                current = current.left;
-                if (current == null) {
-                    prev.left = node;
-                    node.parent = prev;
+            int compareResult = comparator.compare(key, current.key);
+            if (compareResult > 0) {
+                if (current.right == null) {
+                    current.right = new Node<>(key, value, current);
                     size++;
                     return null;
+                } else {
+                    current = current.right;
                 }
-            }
-            if (prev.compareTo(node) < 0) {
-                current = current.right;
-                if (current == null) {
-                    prev.right = node;
-                    node.parent = prev;
+            } else if (compareResult < 0) {
+                if (current.left == null) {
+                    current.left = new Node<>(key, value, current);
                     size++;
                     return null;
+                } else {
+                    current = current.left;
                 }
-            }
-            if (prev.compareTo(node) == 0) {
-                Object oldValue = null;
-                oldValue = prev.value;
-                prev.setValue((V) value);
-                return (V) oldValue;
+            } else {
+                V oldValue = current.value;
+                current.setValue(value);
+                return oldValue;
             }
         }
     }
 
     @Override
-    public Object remove(Object key) {
+    public V remove(K key) {
+        Entry<K, V> entry = getEntry(key);
+        if (entry == null) {
+            return null;
+        }
+
+        // ToDo: заменить реализацию обговоренным вариантом
         if (root == null) return null;
         Node<K, V> node = new Node<K, V>((K) key, (V) null, null);
         if (root.compareTo(node) == 0) {
