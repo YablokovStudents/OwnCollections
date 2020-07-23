@@ -1,6 +1,5 @@
 package my.collections;
 
-import java.util.LinkedList;
 import java.util.*;
 
 public class TreeMap<K, V> implements Map<K, V> {
@@ -72,15 +71,14 @@ public class TreeMap<K, V> implements Map<K, V> {
     }
 
     private Node<K, V> getNode(K key) {
-        if (!(comparator instanceof EmbeddedComparator)) {
-            return getNodeByComparator(key);
-        } else if (key == null) {
-            throw new NullPointerException();
-        } else if (!(key instanceof Comparable)) {
-            throw new IllegalArgumentException();
-        } else {
-            return getNodeByComparator(key);
+        if (comparator instanceof EmbeddedComparator) {
+            if (key == null) {
+                throw new NullPointerException();
+            } else if (!(key instanceof Comparable)) {
+                throw new IllegalArgumentException();
+            }
         }
+        return getNodeByComparator(key);
     }
 
     private Node<K, V> getNodeByComparator(K key) {
@@ -101,14 +99,14 @@ public class TreeMap<K, V> implements Map<K, V> {
     @Override
     public boolean containsValue(V value) {
         if (value == null) {
-            for (Entry<K, V> entry : entrySet()) {
-                if (entry.getValue() == null) {
+            for (V valueFromMap : values()) {
+                if (valueFromMap == null) {
                     return true;
                 }
             }
         } else {
-            for (Entry<K, V> entry : entrySet()) {
-                if (value.equals(entry.getValue())) {
+            for (V valueFromMap : values()) {
+                if (value.equals(valueFromMap)) {
                     return true;
                 }
             }
@@ -124,15 +122,14 @@ public class TreeMap<K, V> implements Map<K, V> {
 
     @Override
     public V put(K key, V value) {
-        if (!(comparator instanceof EmbeddedComparator)) {
-            return putValueByComparator(key, value);
-        } else if (key == null) {
-            throw new NullPointerException();
-        } else if (!(key instanceof Comparable)) {
-            throw new IllegalArgumentException();
-        } else {
-            return putValueByComparator(key, value);
+        if (comparator instanceof EmbeddedComparator) {
+            if (key == null) {
+                throw new NullPointerException();
+            } else if (!(key instanceof Comparable)) {
+                throw new IllegalArgumentException();
+            }
         }
+        return putValueByComparator(key, value);
     }
 
     private V putValueByComparator(K key, V value) {
@@ -188,7 +185,7 @@ public class TreeMap<K, V> implements Map<K, V> {
                 deletingNode.parent.left = null;
             }
             --size;
-            clearLinks(deletingNode);
+            clearNodeLinks(deletingNode);
         }
         return deletedNodeValue;
     }
@@ -226,7 +223,7 @@ public class TreeMap<K, V> implements Map<K, V> {
         }
 
         --size;
-        clearLinks(deletingNode);
+        clearNodeLinks(deletingNode);
     }
 
     private void replaceNodeByGreatestFromLeftSide(Node<K, V> deletingNode) {
@@ -262,10 +259,24 @@ public class TreeMap<K, V> implements Map<K, V> {
         }
 
         --size;
-        clearLinks(deletingNode);
+        clearNodeLinks(deletingNode);
     }
 
-    private void clearLinks(Node<K, V> deletingNode) {
+    @Override
+    public void clear() {
+        clearSubNodeLinks(root);
+        size = 0;
+    }
+
+    private void clearSubNodeLinks(Node<K, V> node) {
+        if (node == null) return;
+
+        clearSubNodeLinks(node.left);
+        clearSubNodeLinks(node.right);
+        clearNodeLinks(node);
+    }
+
+    private void clearNodeLinks(Node<K, V> deletingNode) {
         deletingNode.parent = null;
         deletingNode.left = null;
         deletingNode.right = null;
@@ -273,39 +284,33 @@ public class TreeMap<K, V> implements Map<K, V> {
     }
 
     @Override
-    public void clear() {
-        root = null;
-        size = 0;
-    }
-
-    @Override
     public Collection<V> values() {
         Collection<V> collection = new ArrayList<>(size);
-        addSubValues(collection, root);
+        addSubNodeValues(collection, root);
         return collection;
     }
 
-    private void addSubValues(Collection<V> collection, Node<K, V> node) {
+    private void addSubNodeValues(Collection<V> collection, Node<K, V> node) {
         if (node == null) return;
 
-        addSubValues(collection, node.left);
+        addSubNodeValues(collection, node.left);
         collection.add(node.value);
-        addSubValues(collection, node.right);
+        addSubNodeValues(collection, node.right);
     }
 
     @Override
     public Collection<K> keySet() {
         Collection<K> collection = new ArrayList<>(size);
-        addSubKeys(collection, root);
+        addSubNodeKeys(collection, root);
         return collection;
     }
 
-    private void addSubKeys(Collection<K> collection, Node<K, V> node) {
+    private void addSubNodeKeys(Collection<K> collection, Node<K, V> node) {
         if (node == null) return;
 
-        addSubKeys(collection, node.left);
+        addSubNodeKeys(collection, node.left);
         collection.add(node.key);
-        addSubKeys(collection, node.right);
+        addSubNodeKeys(collection, node.right);
     }
 
     @Override
