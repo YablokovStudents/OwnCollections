@@ -13,7 +13,7 @@ public class ArrayList<T> implements List<T> {
     }
 
     public ArrayList(int capacity) {
-        init(capacity);
+        init(Math.max(capacity, 0));
     }
 
     @SuppressWarnings("unchecked")
@@ -93,7 +93,7 @@ public class ArrayList<T> implements List<T> {
     }
 
     @Override
-    public void add(int index,T item) {
+    public void add(int index, T item) {
         checkRange(index);
         extendArrayIfFull();
         shiftItemsToRight(index);
@@ -128,7 +128,17 @@ public class ArrayList<T> implements List<T> {
 
     private void extendArrayIfFull() {
         if (array.length == size) {
-            array = Arrays.copyOf(array, (array.length * 3) / 2 + 1);
+            array = Arrays.copyOf(array, calculateExtendedArrayLength());
+        }
+    }
+
+    private int calculateExtendedArrayLength() {
+        if (array.length == Integer.MAX_VALUE) {
+            throw new OutOfMemoryError();
+        } else if (array.length >= (Integer.MAX_VALUE / 3) * 2) {
+            return Integer.MAX_VALUE;
+        } else {
+            return (array.length * 3) / 2 + 1;
         }
     }
 
