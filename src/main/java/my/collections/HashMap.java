@@ -77,11 +77,11 @@ public class HashMap<K, V> implements Map<K, V> {
 
     private int calculateCapacityByBinaryShift(int initialCapacity) {
         int result = initialCapacity;
-        result |= result >>> 1; // 2 единичных бита
-        result |= result >>> 2; // 4 единичных бита
-        result |= result >>> 4; // 8 единичных бита
-        result |= result >>> 8; // 16 единичных бита
-        result |= result >>> 16; // 32 единичных бита
+        result |= result >>> 1;  // получаем 2 старших единичных бита
+        result |= result >>> 2;  // получаем 4 старших единичных бита
+        result |= result >>> 4;  // получаем 8 старших единичных бита
+        result |= result >>> 8;  // получаем 16 старших единичных бита
+        result |= result >>> 16; // получаем 32 старших единичных бита
         return result;
     }
 
