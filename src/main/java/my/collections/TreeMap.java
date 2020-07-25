@@ -13,11 +13,13 @@ public class TreeMap<K, V> implements Map<K, V> {
         private Node<K, V> parent;
         private Node<K, V> left;
         private Node<K, V> right;
+        private int height;
 
         public Node(K key, V value, Node<K, V> parent) {
             this.key = key;
             this.value = value;
             this.parent = parent;
+            this.height = 1;
         }
 
         @Override

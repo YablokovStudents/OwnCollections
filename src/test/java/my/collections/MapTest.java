@@ -61,9 +61,9 @@ public class MapTest {
         map.put(2, 1);
         map.put(3, null);
         map.put(null, 2);
-        assertEquals(map.get(2), 1);
+        assertEquals(map.get(2).intValue(), 1);
         assertNull(map.get(3));
-        assertEquals(map.get(null), 2);
+        assertEquals(map.get(null).intValue(), 2);
     }
 
     @Test(dataProvider = "hashMap")

@@ -1,5 +1,7 @@
 package my.collections;
 
+import java.util.Collections;
+
 public class HashMap<K, V> implements Map<K, V> {
     private static final int DEFAULT_INITIAL_CAPACITY = 16;
     private static final float DEFAULT_LOAD_FACTOR = 0.75F;
@@ -9,36 +11,23 @@ public class HashMap<K, V> implements Map<K, V> {
     private static final int TREEIFY_THRESHOLD = 8;
     private static final int UNTREEIFY_THRESHOLD = 6;
 
-    private int threshold;
-    private final float loadFactor;
+    private static final int[] POWERS_OF_TWO = getPowersOfTwo();
 
-    private Deque<Node<K, V>>[] buckets;
-    private int size;
-
-    public HashMap() {
-        this(DEFAULT_INITIAL_CAPACITY);
-    }
-
-    public HashMap(int initialCapacity) {
-        this(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR);
-    }
-
-    @SuppressWarnings("unchecked")
-    public HashMap(int initialCapacity, float loadFactor) {
-        this.loadFactor = loadFactor;
-        threshold = (int) (initialCapacity * loadFactor);
-
-        buckets = new LinkedList[initialCapacity];
-        for (int i = 0; i < buckets.length; i++) {
-            buckets[i] = new LinkedList<>();
+    private static int[] getPowersOfTwo() {
+        int[] result = new int[31];
+        int powerOfTwo = 1;
+        result[0] = powerOfTwo;
+        for (int i = 1; i < result.length; ++i) {
+            result[i] = (powerOfTwo <<= 1);
         }
+        return result;
     }
 
-    public static class Node<K, V> implements Entry<K, V> {
+    private static class Node<K, V> implements Entry<K, V> {
         private final K key;
         private V value;
 
-        public Node(K key, V value) {
+        private Node(K key, V value) {
             this.key = key;
             this.value = value;
         }
@@ -56,6 +45,71 @@ public class HashMap<K, V> implements Map<K, V> {
         @Override
         public void setValue(V value) {
 
+        }
+    }
+
+    private int threshold;
+    private final float loadFactor;
+
+    private Deque<Node<K, V>>[] buckets;
+    private int size;
+
+    public HashMap() {
+        this(DEFAULT_INITIAL_CAPACITY);
+    }
+
+    public HashMap(int initialCapacity) {
+        this(initialCapacity, DEFAULT_LOAD_FACTOR);
+    }
+
+    @SuppressWarnings("unchecked")
+    public HashMap(int initialCapacity, float loadFactor) {
+        int capacity = calculateCapacityByBinaryShift(initialCapacity);
+
+        this.loadFactor = loadFactor;
+        threshold = (int) (capacity * loadFactor);
+
+        buckets = new LinkedList[capacity];
+        for (int i = 0; i < buckets.length; i++) {
+            buckets[i] = new LinkedList<>();
+        }
+    }
+
+    private int calculateCapacityByBinaryShift(int initialCapacity) {
+        int result = initialCapacity;
+        result |= result >>> 1; // 2 единичных бита
+        result |= result >>> 2; // 4 единичных бита
+        result |= result >>> 4; // 8 единичных бита
+        result |= result >>> 8; // 16 единичных бита
+        result |= result >>> 16; // 32 единичных бита
+        return result;
+    }
+
+    private int calculateCapacityByBinarySearch(int initialCapacity) {
+        int itemIndex = binarySearch(initialCapacity, POWERS_OF_TWO, 0, POWERS_OF_TWO.length - 1);
+        return POWERS_OF_TWO[itemIndex];
+    }
+
+    private int binarySearch(int value, int[] array, int leftIndex, int rightIndex) {
+        if (leftIndex == rightIndex) {
+            int item = array[leftIndex];
+            if (item == value) {
+                return leftIndex;
+            } else if (item < value) {
+                return leftIndex;
+            } else {
+                return (leftIndex == array.length - 1) ? leftIndex : leftIndex + 1;
+            }
+        }
+
+        int middleIndex = leftIndex + (rightIndex - leftIndex) >>> 1;
+        int arrayItem = array[middleIndex];
+        if (value == arrayItem) {
+            return middleIndex;
+        } else if (value < arrayItem) {
+            return binarySearch(value, array, leftIndex, middleIndex - 1);
+        } else {
+            return binarySearch(value, array, middleIndex + 1, rightIndex);
         }
     }
 
@@ -135,28 +189,29 @@ public class HashMap<K, V> implements Map<K, V> {
         boolean add = false;
         V value1 = null;
         if (key == null) {
-            for (Node<K, V> current : buckets[0])
+            for (Node<K, V> current : buckets[0]) {
                 if (current.key == null) {
                     value1 = current.value;
                     current.value = (V) value;
                     size++;
                     add = true;
                 }
+            }
             if (!add) {
-                buckets[0].add(new Node<K, V>(null, (V) value));
+                buckets[0].add(new Node<>(null, value));
                 size++;
             }
         } else {
-            for (Node<K,V> current : buckets[getBucketIndex(key)]) {
+            for (Node<K, V> current : buckets[getBucketIndex(key)]) {
                 if (key.equals(current.key)) {
-                    value1 = (V) current.value;
-                    current.value = (V) value;
+                    value1 = current.value;
+                    current.value = value;
                     size++;
                     add = true;
                 }
             }
             if (!add) {
-                buckets[getBucketIndex(key)].add(new Node<K, V>((K)key, (V)value));
+                buckets[getBucketIndex(key)].add(new Node<>(key, value));
                 size++;
             }
         }
@@ -205,6 +260,7 @@ public class HashMap<K, V> implements Map<K, V> {
         }
         return value1;
     }
+
     @SuppressWarnings("unchecked")
     @Override
     public void clear() {

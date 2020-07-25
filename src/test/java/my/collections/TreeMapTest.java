@@ -27,10 +27,10 @@ public class TreeMapTest {
         map.put(3, 4);
         map.put(5, 6);
         map.put(7, 8);
-        assertEquals(map.get(1),2);
-        assertEquals(map.get(3),4);
-        assertEquals(map.get(5),6);
-        assertEquals(map.get(7),8);
+        assertEquals(map.get(1).intValue(),2);
+        assertEquals(map.get(3).intValue(),4);
+        assertEquals(map.get(5).intValue(),6);
+        assertEquals(map.get(7).intValue(),8);
     }
 
     @Test(dataProvider = "TreeMap")
@@ -39,7 +39,7 @@ public class TreeMapTest {
         map.put(2, 1);
         map.put(4, null);
         assertNull(map.put(4, 2));
-        assertEquals(map.put(2,5),1);
+        assertEquals(map.put(2,5).intValue(),1);
     }
 
     @Test(dataProvider = "TreeMap")
@@ -58,10 +58,10 @@ public class TreeMapTest {
         map.put(2, 3);
         map.put(5, 4);
         assertNull(map.remove(55));
-        assertEquals(map.get(2),3);
-        assertEquals(map.remove(2), 3);
+        assertEquals(map.get(2).intValue(),3);
+        assertEquals(map.remove(2).intValue(), 3);
         assertEquals(map.size(), 3);
-        assertEquals(map.remove(1), 2);
+        assertEquals(map.remove(1).intValue(), 2);
         assertEquals(map.size(), 0);
         assertFalse(map.containsKey(4));
         assertFalse(map.containsKey(2));
@@ -77,7 +77,7 @@ public class TreeMapTest {
         assertTrue(map.containsKey(3));
         assertEquals(map.get(3),null);
         assertNull(map.put(3, 4));
-        assertEquals(map.get(3),4);
+        assertEquals(map.get(3).intValue(),4);
         map.remove(3);
         assertFalse(map.containsKey(3));
 
@@ -93,7 +93,7 @@ public class TreeMapTest {
         assertNull(map.get(3));
         assertNull(map.put(3, 4));
         assertTrue(map.containsValue(2));
-        assertEquals(map.get(3),4);
+        assertEquals(map.get(3).intValue(),4);
         map.remove(3);
         assertFalse(map.containsValue(4));
 

@@ -135,10 +135,10 @@ public class ArrayList<T> implements List<T> {
     private int calculateExtendedArrayLength() {
         if (array.length == Integer.MAX_VALUE) {
             throw new OutOfMemoryError();
-        } else if (array.length >= (Integer.MAX_VALUE / 3) * 2) {
+        } else if (array.length >= (Integer.MAX_VALUE / 3) * 2 - 1) {
             return Integer.MAX_VALUE;
         } else {
-            return (array.length * 3) / 2 + 1;
+            return (array.length / 2) * 3 + 1;
         }
     }
 
