@@ -1,6 +1,6 @@
 package my.collections;
 
-import java.util.Collections;
+import java.util.Arrays;
 
 public class HashMap<K, V> implements Map<K, V> {
     private static final int DEFAULT_INITIAL_CAPACITY = 16;
@@ -44,12 +44,12 @@ public class HashMap<K, V> implements Map<K, V> {
 
         @Override
         public void setValue(V value) {
-
+            this.value = value;
         }
     }
 
-    private int threshold;
     private final float loadFactor;
+    private int threshold;
 
     private Deque<Node<K, V>>[] buckets;
     private int size;
@@ -76,13 +76,20 @@ public class HashMap<K, V> implements Map<K, V> {
     }
 
     private int calculateCapacityByBinaryShift(int initialCapacity) {
-        int result = initialCapacity;
+        if (initialCapacity < 0) {
+            throw new IllegalArgumentException();
+        }
+        if (initialCapacity == 0) {
+            return 1;
+        }
+
+        int result = initialCapacity - 1;
         result |= result >>> 1;  // получаем 2 старших единичных бита
         result |= result >>> 2;  // получаем 4 старших единичных бита
         result |= result >>> 4;  // получаем 8 старших единичных бита
         result |= result >>> 8;  // получаем 16 старших единичных бита
         result |= result >>> 16; // получаем 32 старших единичных бита
-        return result;
+        return result + 1;
     }
 
     private int calculateCapacityByBinarySearch(int initialCapacity) {
@@ -125,23 +132,34 @@ public class HashMap<K, V> implements Map<K, V> {
 
     @Override
     public boolean containsKey(K key) {
-        if (key == null) {
-            for (Node<K, V> node : buckets[0])
-                if (node.key == null) {
-                    return true;
-                }
-        } else {
-            for (Node<K, V> node : buckets[getBucketIndex(key)]) {
-                if (key.equals(node.key)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return getNodeByKey(key) != null;
     }
 
     private int getBucketIndex(K key) {
-        return key.hashCode() % buckets.length;
+        return getBucketIndex(key, buckets.length);
+    }
+
+    private int getBucketIndex(K key, int bucketLength) {
+        return calculateHashCode(key, bucketLength) & (bucketLength - 1);
+    }
+
+    /**
+     * @return число, младшие n бит которого попарно связаны с битами из более старших групп,
+     * причем n == количеству бит, которые могут использоваться при кодировании индекса в рамках массива корзин.
+     */
+    private int calculateHashCode(K key, int bucketLength) {
+        if (bucketLength == 1) {
+            return key.hashCode();
+        }
+
+        int originalHashCode = key.hashCode();
+        int result = originalHashCode;
+        int powerOfTwo = Arrays.binarySearch(POWERS_OF_TWO, bucketLength);
+        for (int i = 1; i < (32 / powerOfTwo); i++) {
+            result ^= (originalHashCode >>>= powerOfTwo);
+        }
+        result ^= originalHashCode >>> powerOfTwo; // имеет смысл лишь для случая: if (32 % powerOfTwo != 0)
+        return result;
     }
 
     @Override
@@ -167,16 +185,21 @@ public class HashMap<K, V> implements Map<K, V> {
 
     @Override
     public V get(K key) {
+        Node<K, V> foundNode = getNodeByKey(key);
+        return (foundNode == null) ? null : foundNode.value;
+    }
+
+    private Node<K, V> getNodeByKey(K key) {
         if (key == null) {
             for (Node<K, V> node : buckets[0]) {
                 if (node.key == null) {
-                    return node.value;
+                    return node;
                 }
             }
         } else {
             for (Node<K, V> node : buckets[getBucketIndex(key)]) {
                 if (key.equals(node.key)) {
-                    return node.value;
+                    return node;
                 }
             }
         }
@@ -185,114 +208,89 @@ public class HashMap<K, V> implements Map<K, V> {
 
     @Override
     public V put(K key, V value) {
-        movingToBuckets();
-        boolean add = false;
-        V value1 = null;
-        if (key == null) {
-            for (Node<K, V> current : buckets[0]) {
-                if (current.key == null) {
-                    value1 = current.value;
-                    current.value = (V) value;
-                    size++;
-                    add = true;
-                }
-            }
-            if (!add) {
-                buckets[0].add(new Node<>(null, value));
-                size++;
-            }
+        Node<K, V> foundNode = getNodeByKey(key);
+        if (foundNode != null) {
+            V oldValue = foundNode.getValue();
+            foundNode.setValue(value);
+            return oldValue;
         } else {
-            for (Node<K, V> current : buckets[getBucketIndex(key)]) {
-                if (key.equals(current.key)) {
-                    value1 = current.value;
-                    current.value = value;
-                    size++;
-                    add = true;
-                }
+            buckets[getBucketIndex(key)].add(new Node<>(key, value));
+            if (++size > threshold) {
+                increaseBucketNumber();
             }
-            if (!add) {
-                buckets[getBucketIndex(key)].add(new Node<>(key, value));
-                size++;
-            }
+            return null;
         }
-        return value1;
     }
 
     @SuppressWarnings("unchecked")
-    private void movingToBuckets() {
-        if (size >= threshold) {
-            increaseThreshold();
-            LinkedList<Node<K, V>>[] buckets1 = new LinkedList[threshold];
-            for (Entry<K, V> pair : entrySet())
-                buckets1[pair.getKey().hashCode() % buckets1.length].add((Node<K, V>) pair);
-            buckets = buckets1;
+    private void increaseBucketNumber() {
+        LinkedList<Node<K, V>>[] newBuckets = new LinkedList[buckets.length << 1];
+        for (Entry<K, V> entry : entrySet()) {
+            newBuckets[getBucketIndex(entry.getKey(), newBuckets.length)].add((Node<K, V>) entry);
         }
+        buckets = newBuckets;
+        threshold = calculateNewThreshold();
     }
 
-    private void increaseThreshold() {
+    private int calculateNewThreshold() {
         if (buckets.length == MAX_CAPACITY) {
-            threshold = Integer.MAX_VALUE;
+            return Integer.MAX_VALUE;
         } else {
-            threshold <<= 1;
+            return (int) (buckets.length * loadFactor);
         }
     }
 
     @Override
-    public Object remove(Object key) {
-        Object value1 = null;
-        LinkedList<Node<K, V>> current;
-        if (key == null) {
-            current = (LinkedList<Node<K, V>>) buckets[0];
-            for (int i = 0; i < current.size(); i++)
-                if (current.get(i).key == null) {
-                    value1 = current.get(i).value;
-                    current.remove(current.get(i));
-                    size--;
-                }
-        } else {
-            current = (LinkedList<Node<K, V>>) buckets[getBucketIndex(key)];
-            for (int i = 0; i < current.size(); i++)
-                if (key.equals(current.get(i).key)) {
-                    value1 = current.get(i).value;
-                    current.remove(current.get(i));
-                    size--;
-                }
+    public V remove(K key) {
+        Node<K, V> foundNode = getNodeByKey(key);
+        if (foundNode == null) {
+            return null;
         }
-        return value1;
+
+        V removedValue = foundNode.getValue();
+        Deque<Node<K, V>> bucket = buckets[getBucketIndex(key)];
+        bucket.remove(foundNode);
+        return removedValue;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void clear() {
-        buckets = new LinkedList[DEFAULT_INITIAL_CAPACITY];
         size = 0;
+        for (Deque<Node<K, V>> bucket : buckets) {
+            bucket.clear();
+        }
     }
 
 
     @Override
     public Collection<V> values() {
-        Collection<V> collection = new ArrayList<V>();
-        for (Deque<Node<K, V>> linkedList : buckets)
-            for (Node<K, V> entry : linkedList)
-                collection.add(entry.value);
+        Collection<V> collection = new ArrayList<>();
+        for (Deque<Node<K, V>> bucket : buckets) {
+            for (Node<K, V> node : bucket) {
+                collection.add(node.value);
+            }
+        }
         return collection;
     }
 
     @Override
     public Collection<K> keySet() {
-        Collection<K> collection = new ArrayList<>();
-        for (Deque<Node<K, V>> linkedList : buckets)
-            for (Node<K, V> entry : linkedList)
-                collection.add(entry.key);
+        Collection<K> collection = new ArrayList<>(size);
+        for (Deque<Node<K, V>> bucket : buckets) {
+            for (Node<K, V> node : bucket) {
+                collection.add(node.key);
+            }
+        }
         return collection;
     }
 
     @Override
     public Collection<Entry<K, V>> entrySet() {
-        Collection<Entry<K, V>> collection = new ArrayList<>();
-        for (Deque<Node<K, V>> linkedList : buckets) {
-            for (Node<K, V> current : linkedList)
-                collection.add(current);
+        Collection<Entry<K, V>> collection = new ArrayList<>(size);
+        for (Deque<Node<K, V>> bucket : buckets) {
+            for (Node<K, V> node : bucket) {
+                collection.add(node);
+            }
         }
         return collection;
     }
