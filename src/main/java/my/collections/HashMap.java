@@ -140,6 +140,9 @@ public class HashMap<K, V> implements Map<K, V> {
     }
 
     private int getBucketIndex(K key, int bucketLength) {
+        if (key == null) {
+            return 0;
+        }
         return calculateHashCode(key, bucketLength) & (bucketLength - 1);
     }
 
@@ -250,6 +253,7 @@ public class HashMap<K, V> implements Map<K, V> {
         V removedValue = foundNode.getValue();
         Deque<Node<K, V>> bucket = buckets[getBucketIndex(key)];
         bucket.remove(foundNode);
+        --size;
         return removedValue;
     }
 
