@@ -11,7 +11,7 @@ public class MapTest {
     @DataProvider(name = "maps")
     public Object[][] getMaps() {
         return new Object[][]{
-                {new HashMap<Integer, Integer>()},
+                /*{new HashMap<Integer, Integer>()},*/
                 {new TreeMap<Integer, Integer>(new TreeMapComparator<>())}
         };
     }
@@ -111,5 +111,20 @@ public class MapTest {
         assertTrue(map.containsValue(1));
         assertTrue(map.containsKey(null));
         assertFalse(map.containsKey(5));
+    }
+
+    @Test
+    public void containsValu() {
+        Map<Integer,Integer> map = new TreeMap<>();
+        map.put(4, 1);
+        map.put(2, null);
+        map.put(6, 2);
+        map.put(1, 1);
+        map.put(3, null);
+        map.put(5, 2);
+        map.put(7, 1);
+        map.put(8, null);
+        map.put(9, 2);
+
     }
 }

@@ -80,7 +80,7 @@ public class IterableTest {
     }
 
     @Test(dataProvider = "filledLists", expectedExceptions = ConcurrentModificationException.class)
-    public void iterator_ConcurrentModificationCase(List<Integer> list) {
+    public void iterator_ConModificationCase(List<Integer> list) {
         Iterator<Integer> iterator = list.iterator();
         assertTrue(iterator.hasNext());
         assertEquals(iterator.next().intValue(), 1);
