@@ -551,8 +551,9 @@ public class TreeMap<K, V> implements Map<K, V> {
             List<PrintingNode<K, V>> rowOfNodes = rowsOfNodes.get(rowNumber);
             for (int nodeNumber = 0; nodeNumber < rowOfNodes.size(); ++nodeNumber) {
                 PrintingNode<K, V> node = rowOfNodes.get(nodeNumber);
-
                 int distanceBetweenNodes = node.indexInRow - prevNodeIndexInRow;
+
+                // заполняем отступы между соседними элементами
                 for (int i = 0; i < distanceBetweenNodes; ++i) {
                     for (int j = 0; j < itemsIndent; ++j) {
                         stringBuilder.append(TO_STRING_ITEMS_DELIMITER);
@@ -579,6 +580,7 @@ public class TreeMap<K, V> implements Map<K, V> {
                     }
                 }
 
+                // дополняем до длины наибольшего ключа с учетом централизации
                 stringBuilder.append(StringUtils.center(Objects.toString(node.key), maxKeyLength));
                 prevNodeIndexInRow = node.indexInRow;
             }
