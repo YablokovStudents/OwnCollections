@@ -115,16 +115,31 @@ public class MapTest {
 
     @Test
     public void containsValu() {
-        Map<Integer,Integer> map = new TreeMap<>();
-        map.put(4, 1);
-        map.put(2, null);
-        map.put(6, 2);
-        map.put(1, 1);
-        map.put(3, null);
-        map.put(5, 2);
-        map.put(7, 1);
-        map.put(8, null);
-        map.put(9, 2);
+        Map<Integer, Integer> map = new TreeMap<>();
 
+        map.put(10, null);
+
+        map.put(5, null);
+        map.put(15, null);
+
+        map.put(3, null);
+        map.put(8, null);
+
+        map.put(13, null);
+        map.put(20, null);
+
+        map.put(18, null);
+        map.put(22, null);
+
+        map.put(11, null);
+        map.put(14, null);
+
+        map.put(1, null);
+        map.put(4, null);
+
+        map.put(7, null);
+        map.put(9, null);
+
+        System.out.println(map.toString());
     }
 }

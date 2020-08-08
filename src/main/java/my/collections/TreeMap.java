@@ -1,13 +1,17 @@
 package my.collections;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.Comparator;
+import java.util.Objects;
 
 public class TreeMap<K, V> implements Map<K, V> {
+    private static final int TO_STRING_MIN_ITEMS_DISTANCE = 2;
+    private static final char TO_STRING_ITEMS_DELIMITER = ' ';
+
     private int size;
     private Node<K, V> root;
     private final Comparator<K> comparator;
-    public static final int ITEM_SHIFT = 2;
-    public static final int ITEM_WIDTH = 4;
 
     private static class Node<K, V> implements Entry<K, V> {
         private final K key;
@@ -538,37 +542,45 @@ public class TreeMap<K, V> implements Map<K, V> {
 
         StringBuilder stringBuilder = new StringBuilder();
 
+        int maxKeyLength = Objects.toString(getBiggestKey(root)).length();
         List<List<PrintingNode<K, V>>> rowsOfNodes = new ArrayList<>();
         addSubNodesInfo(rowsOfNodes, 0, root, 1);
-
         for (int rowNumber = 0; rowNumber < rowsOfNodes.size(); ++rowNumber) {
-            int itemsIndent = getIndent(rowsOfNodes.size(), rowNumber);
-            int prevNodeNumberInRow = 0;
-
+            int prevNodeIndexInRow = 0;
+            int itemsIndent = getIndent(rowsOfNodes.size(), rowNumber, maxKeyLength);
             List<PrintingNode<K, V>> rowOfNodes = rowsOfNodes.get(rowNumber);
             for (int nodeNumber = 0; nodeNumber < rowOfNodes.size(); ++nodeNumber) {
                 PrintingNode<K, V> node = rowOfNodes.get(nodeNumber);
 
-                if (nodeNumber == 0) {
-                    for (int j = 0; j < (itemsIndent >>> 1); ++j) {
-                        stringBuilder.append(" ");
-                    }
-                }
-
-                int distanceBetweenNodes = node.numberInRow - prevNodeNumberInRow;
+                int distanceBetweenNodes = node.indexInRow - prevNodeIndexInRow;
                 for (int i = 0; i < distanceBetweenNodes; ++i) {
                     for (int j = 0; j < itemsIndent; ++j) {
-                        stringBuilder.append(" ");
+                        stringBuilder.append(TO_STRING_ITEMS_DELIMITER);
                     }
                 }
-                for (int i = 1; i < distanceBetweenNodes; ++i) {
-                    for (int j = 0; j < ITEM_WIDTH; ++j) {
-                        stringBuilder.append(" ");
-                    }
-                }
-                prevNodeNumberInRow = node.numberInRow;
 
-                stringBuilder.append(String.format("%" + ITEM_WIDTH + "s", node.key));
+                if (nodeNumber == 0) {
+                    // заполняем левый отступ первого элемента строки символом delimiter'ом
+                    for (int j = 0; j < (itemsIndent >>> 1); ++j) {
+                        stringBuilder.append(TO_STRING_ITEMS_DELIMITER);
+                    }
+                    // заполняем пропущенные элементы символом delimiter'ом
+                    for (int i = 0; i < node.indexInRow; ++i) {
+                        for (int j = 0; j < maxKeyLength; ++j) {
+                            stringBuilder.append(TO_STRING_ITEMS_DELIMITER);
+                        }
+                    }
+                } else {
+                    // заполняем пропущенные элементы символом delimiter'ом
+                    for (int i = 1; i < distanceBetweenNodes; ++i) {
+                        for (int j = 0; j < maxKeyLength; ++j) {
+                            stringBuilder.append(TO_STRING_ITEMS_DELIMITER);
+                        }
+                    }
+                }
+
+                stringBuilder.append(StringUtils.center(Objects.toString(node.key), maxKeyLength));
+                prevNodeIndexInRow = node.indexInRow;
             }
             stringBuilder.append("\n");
         }
@@ -576,24 +588,33 @@ public class TreeMap<K, V> implements Map<K, V> {
         return stringBuilder.toString();
     }
 
-//    private int getIndent(int rowsCount, int rowNumber) {
-//        int powerOfTwo = 1 << (rowsCount - rowNumber - 1);
-//        return ITEM_SHIFT * powerOfTwo + ITEM_WIDTH * (powerOfTwo >>> 1) + ITEM_WIDTH;
-//    }
+    private K getBiggestKey(Node<K, V> node) {
+        if (node == null) return null;
 
-    private int getIndent(int size, int rowNumber) {
-        if (rowNumber >= size - 1) {
-            return ITEM_SHIFT;
+        while (node.right != null) {
+            node = node.right;
         }
-        return getIndent(size, rowNumber + 1) << 1 + ITEM_WIDTH;
+        return node.getKey();
     }
 
-    private void addSubNodesInfo(List<List<PrintingNode<K, V>>> rowsOfNodes, int rowNumber, Node<K, V> node, int nodeNumberInRow) {
+    //private int getIndent(int rowsCount, int rowNumber) {
+    //    int powerOfTwo = 1 << (rowsCount - rowNumber - 1);
+    //    return ITEM_SHIFT * powerOfTwo + ITEM_WIDTH * (powerOfTwo >>> 1) + ITEM_WIDTH;
+    //}
+
+    private int getIndent(int rowsCount, int rowIndex, int maxKeyLength) {
+        if (rowIndex >= rowsCount - 1) {
+            return TO_STRING_MIN_ITEMS_DISTANCE;
+        }
+        return (getIndent(rowsCount, rowIndex + 1, maxKeyLength) << 1) + maxKeyLength;
+    }
+
+    private void addSubNodesInfo(List<List<PrintingNode<K, V>>> rowsOfNodes, int rowIndex, Node<K, V> node, int nodeIndexInRow) {
         if (node == null) return;
 
-        addNodeToRow(rowsOfNodes, rowNumber, node, nodeNumberInRow);
-        addSubNodesInfo(rowsOfNodes, rowNumber + 1, node.left, (nodeNumberInRow << 1) - 1);
-        addSubNodesInfo(rowsOfNodes, rowNumber + 1, node.right, nodeNumberInRow << 1);
+        addNodeToRow(rowsOfNodes, rowIndex, node, nodeIndexInRow - 1);
+        addSubNodesInfo(rowsOfNodes, rowIndex + 1, node.left, (nodeIndexInRow << 1) - 1);
+        addSubNodesInfo(rowsOfNodes, rowIndex + 1, node.right, nodeIndexInRow << 1);
     }
 
     private void addNodeToRow(List<List<PrintingNode<K, V>>> rowsOfNodes, int rowNumber, Node<K, V> node, int nodeNumberInRow) {
@@ -610,12 +631,12 @@ public class TreeMap<K, V> implements Map<K, V> {
     private static class PrintingNode<K, V> {
         private final K key;
         private final V value;
-        private final int numberInRow;
+        private final int indexInRow;
 
-        private PrintingNode(K key, V value, int numberInRow) {
+        private PrintingNode(K key, V value, int indexInRow) {
             this.key = key;
             this.value = value;
-            this.numberInRow = numberInRow;
+            this.indexInRow = indexInRow;
         }
     }
 }
