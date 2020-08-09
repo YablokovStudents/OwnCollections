@@ -1,5 +1,6 @@
 package my.collections;
 
+/** Список объектов. */
 public interface List<T> extends Collection<T> {
     /** Индекс, указывающий на отсутствие искомого элемента. */
     int INDEX_NOT_FOUND = -1;

@@ -1,8 +1,6 @@
 package my.collections;
 
-/**
- * Интерфейс коллекции объектов.
- */
+/** Коллекция объектов. */
 public interface Collection<T> extends Iterable<T> {
     /** @return количество элементов в коллекции */
     int size();

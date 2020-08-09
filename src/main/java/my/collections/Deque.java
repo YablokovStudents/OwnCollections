@@ -2,6 +2,7 @@ package my.collections;
 
 import java.util.NoSuchElementException;
 
+/** Двунаправленная очередь объектов. */
 public interface Deque<T> extends Collection<T> {
     /** Добавление элемента в начало коллекции. */
     void addFirst(T item);
