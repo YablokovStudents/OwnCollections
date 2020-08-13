@@ -1,5 +1,7 @@
 package my.collections;
 
+
+
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Comparator;
@@ -10,15 +12,15 @@ public class TreeMap<K, V> implements Map<K, V> {
     private static final char TO_STRING_ITEMS_DELIMITER = ' ';
 
     private int size;
-    private Node<K, V> root;
-    private final Comparator<K> comparator;
+    public Node<K,V> root;
+    public final Comparator<K> comparator;
 
-    private static class Node<K, V> implements Entry<K, V> {
-        private final K key;
-        private V value;
+    static class Node<K, V> implements Entry<K, V> {
+        public final K key;
+        public V value;
         private Node<K, V> parent;
-        private Node<K, V> left;
-        private Node<K, V> right;
+        public Node<K, V> left;
+        public Node<K, V> right;
         private int height;
         private int balanceFactor;
 
@@ -233,7 +235,7 @@ public class TreeMap<K, V> implements Map<K, V> {
                     balanceFactorAndRotate(current);
                     //  }
                 } else current.height = 0;
-                System.out.println(current.key + " ключ с высотой " + current.height + " переход выше" + current.balanceFactor + " баланс");
+                System.out.println(current.key + " ключ с высотой " + current.height + " переход выше " + current.balanceFactor + " баланс");
                 if (current.parent != null) current = current.parent;
                 else return;
             }
@@ -246,27 +248,27 @@ public class TreeMap<K, V> implements Map<K, V> {
                 if (node.left.height > node.right.height) {
                     node.height = node.left.height + 1;
                     System.out.println(node.key + "  " + node.height);
-                    System.out.println("добавилась высота от левой");
+                    System.out.println("1добавилась высота от левой");
                     balanceFactorAndRotate(node);
                 } else if (node.left.height < node.right.height) {
                     node.height = node.right.height + 1;
                     System.out.println(node.key + "  " + node.height);
-                    System.out.println("добавилась высота от правой");
+                    System.out.println("1добавилась высота от правой");
                     balanceFactorAndRotate(node);
                 } else {
                     node.height = node.left.height + 1;
                     System.out.println(node.key + "  " + node.height);
-                    System.out.println("у детей равные высоты");
+                    System.out.println("1у детей равные высоты");
                 }
             } else if (node.left == null && node.right != null) {
                 node.height = node.right.height + 1;
                 System.out.println(node.key + "  " + node.height);
-                System.out.println("добавилась высота от правой левого нет");
+                System.out.println("1добавилась высота от правой левого нет");
                 balanceFactorAndRotate(node);
             } else if (node.left != null) {
                 node.height = node.left.height + 1;
                 System.out.println(node.key + "  " + node.height);
-                System.out.println("добавилась высота от левой правого нет высота левого сына " + node.left.key + " - " + node.left.height);
+                System.out.println("1добавилась высота от левой правого нет высота левого сына " + node.left.key + " - " + node.left.height);
                 balanceFactorAndRotate(node);
             } else node.height = 0;
             System.out.println(node.key + " ключ с высотойй " + node.height);
@@ -276,6 +278,7 @@ public class TreeMap<K, V> implements Map<K, V> {
     }
 
     private void balanceFactorAndRotate(Node<K, V> current) {
+        if (current.parent != null) System.out.println(current.parent.key + " отец ключа " + current.key + " в начале balanceFactorAndRotate");
         System.out.println("1баланс фактор ключа " + current.key + " - " + current.balanceFactor);
         balanceFactor(current);
         System.out.println("баланс фактор ключа после подсчета" + current.key + " - " + current.balanceFactor);
@@ -436,6 +439,7 @@ public class TreeMap<K, V> implements Map<K, V> {
                 root = node.left;
             }
             if (node.parent != null) {
+                System.out.println(node.parent.key + " отец ключа " + node.key + " при повороте влево");
                 Node<K, V> parent = node.parent;
                 if (parent.left == node) parent.left = node.left;
                 else parent.right = node.left;
@@ -445,6 +449,8 @@ public class TreeMap<K, V> implements Map<K, V> {
             node.left.parent = node.parent;
             node.parent = node.left;
             node.left = rc;
+            if (rc != null)
+            rc.parent = node;
             // calculateHeight(calculateHeightForOneNode(node));
             System.out.println("правый поворот ключа " + node.key);
         }
@@ -456,6 +462,7 @@ public class TreeMap<K, V> implements Map<K, V> {
                 root = node.right;
             }
             if (node.parent != null) {
+                System.out.println(node.parent.key + " отец ключа " + node.key + " при повороте влево");
                 Node<K, V> parent = node.parent;
                 if (parent.left == node) parent.left = node.right;
                 else parent.right = node.right;
@@ -465,6 +472,8 @@ public class TreeMap<K, V> implements Map<K, V> {
             node.right.parent = node.parent;
             node.parent = node.right;
             node.right = lc;
+            if (lc != null)
+            lc.parent = node;
             // calculateHeight(calculateHeightForOneNode(node));
             System.out.println("левый поворот ключа " + node.key);
         }

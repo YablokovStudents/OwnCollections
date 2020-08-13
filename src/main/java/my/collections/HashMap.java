@@ -1,6 +1,8 @@
 package my.collections;
 
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 
 public class HashMap<K, V> implements Map<K, V> {
     private static final int DEFAULT_INITIAL_CAPACITY = 16;
@@ -21,6 +23,52 @@ public class HashMap<K, V> implements Map<K, V> {
             result[i] = (powerOfTwo <<= 1);
         }
         return result;
+    }
+
+    private static class ComparatorForBucket<K> implements Comparator<K> {
+
+        @Override
+        public int compare(K o1, K o2) {
+            if (o1 == null) {
+                return (o2 == null) ? 0 : -1;
+            } else if (o2 == null) {
+                return 1;
+            } else {
+                if (o1.hashCode() == o2.hashCode()) {
+                    if (o1.equals(o2)) return 0;
+                    else return 1;
+                } else return o1.hashCode() - o2.hashCode();
+            }
+        }
+    }
+
+    private static class HashTreeMap<K, V> extends TreeMap<K, V> {
+        public HashTreeMap() {
+            super(new ComparatorForBucket<>());
+        }
+        @Override
+        public V get(K key) {
+            TreeMap.Node<K,V> current = super.root;
+            Comparator<K> comparator = super.comparator;
+            return getValueByComparator(key, current, comparator);
+
+        }
+
+        private V getValueByComparator(K key, Node<K, V> current, Comparator<K> comparator) {
+            Node<K, V> currentLeft = current.left;
+            while (current != null) {
+                int compareResult = comparator.compare(key, current.key);
+                if (compareResult > 0) {
+                    current = current.right;
+                } else if (compareResult < 0) {
+                    current = current.left;
+                } else {
+                    return current.value;
+                }
+
+            }
+            return getValueByComparator(key,currentLeft,comparator);
+        }
     }
 
     private static class Node<K, V> implements Entry<K, V> {
@@ -48,10 +96,40 @@ public class HashMap<K, V> implements Map<K, V> {
         }
     }
 
+    private static class Bucket<K, V> {
+        private Deque<Entry<K, V>> deque;
+        private Map<K, V> map;
+
+        private Bucket(Deque<Entry<K, V>> deque) {
+            this.deque = deque;
+        }
+
+        private Bucket(Map<K, V> map) {
+            this.map = map;
+        }
+
+        private boolean isQueue() {
+            return deque != null;
+        }
+
+        private Deque<Entry<K, V>> asQueue() {
+            return deque;
+        }
+
+        private boolean isMap() {
+            return map != null;
+        }
+
+        private Map<K, V> asMap() {
+            return map;
+        }
+
+    }
+
     private final float loadFactor;
     private int threshold;
 
-    private Deque<Node<K, V>>[] buckets;
+    private Bucket<K, V>[] buckets;
     private int size;
 
     public HashMap() {
@@ -69,9 +147,9 @@ public class HashMap<K, V> implements Map<K, V> {
         this.loadFactor = loadFactor;
         threshold = (int) (capacity * loadFactor);
 
-        buckets = new LinkedList[capacity];
+        buckets = new Bucket[capacity];
         for (int i = 0; i < buckets.length; i++) {
-            buckets[i] = new LinkedList<>();
+            buckets[i] = new Bucket<>(new LinkedList<>());
         }
     }
 
@@ -131,8 +209,12 @@ public class HashMap<K, V> implements Map<K, V> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public boolean containsKey(K key) {
-        return getNodeByKey(key) != null;
+        Bucket<K, V> bucket = buckets[getBucketIndex(key)];
+        if (bucket.isQueue()) {
+            return getNodeByKey(bucket.asQueue(), key) != null;
+        } else return bucket.asMap().get(key) != null;
     }
 
     private int getBucketIndex(K key) {
@@ -150,6 +232,7 @@ public class HashMap<K, V> implements Map<K, V> {
      * @return число, младшие n бит которого попарно связаны с битами из более старших групп,
      * причем n == количеству бит, которые могут использоваться при кодировании индекса в рамках массива корзин.
      */
+
     private int calculateHashCode(K key, int bucketLength) {
         if (bucketLength == 1) {
             return key.hashCode();
@@ -167,41 +250,54 @@ public class HashMap<K, V> implements Map<K, V> {
 
     @Override
     public boolean containsValue(V value) {
-        if (value == null) {
-            for (Deque<Node<K, V>> deque : buckets)
-                for (Node<K, V> node : deque) {
-                    if (node.value == null) {
-                        return true;
-                    }
-                }
-        } else {
-            for (Deque<Node<K, V>> deque : buckets) {
-                for (Node<K, V> node : deque) {
-                    if (value.equals(node.value)) {
-                        return true;
-                    }
-                }
-            }
+//        if (value == null) {
+//            for (Deque<Node<K, V>> deque : buckets)
+//                for (Node<K, V> node : deque) {
+//                    if (node.value == null) {
+//                        return true;
+//                    }
+//                }
+//        } else {
+//            for (Deque<Node<K, V>> deque : buckets) {
+//                for (Node<K, V> node : deque) {
+//                    if (value.equals(node.value)) {
+//                        return true;
+//                    }
+//                }
+//            }
+//        }
+//        return false;
+
+        for (Entry<K, V> node : entrySet()) {
+            if (value == null) {
+                if (node.getValue() == null) return true;
+            } else if (value.equals(node.getValue())) return true;
         }
         return false;
     }
 
     @Override
     public V get(K key) {
-        Node<K, V> foundNode = getNodeByKey(key);
-        return (foundNode == null) ? null : foundNode.value;
+        Bucket<K, V> bucket = buckets[getBucketIndex(key)];
+        if (bucket.isQueue()) {
+            Entry<K, V> node = getNodeByKey(bucket.asQueue(), key);
+            return node != null ? node.getValue() : null;
+        } else {
+            return bucket.asMap().get(key);
+        }
+
     }
 
-    private Node<K, V> getNodeByKey(K key) {
+    private Entry<K, V> getNodeByKey(Deque<Entry<K, V>> bucket, K key) {
         if (key == null) {
-            for (Node<K, V> node : buckets[0]) {
-                if (node.key == null) {
+            for (Entry<K, V> node : bucket) {
+                if (node.getKey() == null) {
                     return node;
                 }
             }
         } else {
-            for (Node<K, V> node : buckets[getBucketIndex(key)]) {
-                if (key.equals(node.key)) {
+            for (Entry<K, V> node : bucket) {
+                if (key.equals(node.getKey())) {
                     return node;
                 }
             }
@@ -211,25 +307,49 @@ public class HashMap<K, V> implements Map<K, V> {
 
     @Override
     public V put(K key, V value) {
-        Node<K, V> foundNode = getNodeByKey(key);
-        if (foundNode != null) {
-            V oldValue = foundNode.getValue();
-            foundNode.setValue(value);
-            return oldValue;
-        } else {
-            buckets[getBucketIndex(key)].add(new Node<>(key, value));
-            if (++size > threshold) {
-                increaseBucketNumber();
+       System.out.println("RRRRRRRRRRRRR");
+        int index = getBucketIndex(key);
+        Bucket<K, V> bucket = buckets[index];
+        System.out.println(key + " ключ " + " номер корзины " + index);
+        if (bucket.isQueue()) {
+            System.out.println(1111);
+            Entry<K, V> foundNode = getNodeByKey(bucket.asQueue(), key);
+            if (foundNode != null) {
+                V oldValue = foundNode.getValue();
+                foundNode.setValue(value);
+                return oldValue;
+            } else {
+                bucket.asQueue().add(new Node<>(key, value));
+                if (++size > threshold) {
+                    increaseBucketNumber();
+                }
+                if (bucket.asQueue().size() > 8) {
+                    System.out.println(1234);
+                    Bucket<K, V> newBucket = new Bucket<>(new HashTreeMap<>());
+                    for (Entry<K, V> kvEntry : bucket.asQueue()) {
+                        newBucket.asMap().put(kvEntry.getKey(), kvEntry.getValue());
+                    }
+                    buckets[index] = newBucket;
+                }
+                return null;
             }
-            return null;
+        } else {
+            System.out.println(2222);
+            bucket.asMap().put(key, value);
+            return bucket.asMap().get(key);
         }
     }
 
     @SuppressWarnings("unchecked")
     private void increaseBucketNumber() {
-        LinkedList<Node<K, V>>[] newBuckets = new LinkedList[buckets.length << 1];
+        Bucket<K, V>[] newBuckets = new Bucket[buckets.length << 1];
+        for (int i = 0; i < newBuckets.length; i++) {
+            newBuckets[i] = new Bucket<K, V>(new LinkedList<>());
+        }
         for (Entry<K, V> entry : entrySet()) {
-            newBuckets[getBucketIndex(entry.getKey(), newBuckets.length)].add((Node<K, V>) entry);
+            Bucket<K, V> bucket = newBuckets[getBucketIndex(entry.getKey(), newBuckets.length)];
+            if (bucket.isQueue()) bucket.asQueue().add(entry);
+            else bucket.asMap().put(entry.getKey(), entry.getValue());
         }
         buckets = newBuckets;
         threshold = calculateNewThreshold();
@@ -245,23 +365,36 @@ public class HashMap<K, V> implements Map<K, V> {
 
     @Override
     public V remove(K key) {
-        Node<K, V> foundNode = getNodeByKey(key);
-        if (foundNode == null) {
-            return null;
-        }
+        Bucket<K, V> bucket = buckets[getBucketIndex(key)];
+        if (bucket.isQueue()) {
+            Entry<K, V> foundNode = getNodeByKey(bucket.asQueue(), key);
+            if (foundNode == null) {
+                return null;
+            }
 
-        V removedValue = foundNode.getValue();
-        Deque<Node<K, V>> bucket = buckets[getBucketIndex(key)];
-        bucket.remove(foundNode);
-        --size;
-        return removedValue;
+            V removedValue = foundNode.getValue();
+            bucket.asQueue().remove(foundNode);
+            --size;
+            return removedValue;
+        } else {
+            V value = bucket.asMap().remove(key);
+            if (bucket.asMap().size() < 6) {
+                Bucket<K, V> newBucket = new Bucket<K, V>(new LinkedList<>());
+                for (Entry<K, V> kvEntry : bucket.asMap().entrySet()) {
+                    newBucket.asQueue().add(kvEntry);
+                }
+
+            }
+            return value;
+        }
     }
 
     @Override
     public void clear() {
         size = 0;
-        for (Deque<Node<K, V>> bucket : buckets) {
-            bucket.clear();
+        for (Bucket<K, V> bucket : buckets) {
+            if (bucket.isQueue()) bucket.asQueue().clear();
+            else bucket.asMap().clear();
         }
     }
 
@@ -269,20 +402,29 @@ public class HashMap<K, V> implements Map<K, V> {
     @Override
     public Collection<V> values() {
         Collection<V> collection = new ArrayList<>();
-        for (Deque<Node<K, V>> bucket : buckets) {
-            for (Node<K, V> node : bucket) {
-                collection.add(node.value);
+        for (Bucket<K, V> bucket : buckets) {
+            if (bucket.asQueue() instanceof java.util.Deque) {
+                for (Entry<K, V> node : bucket.asQueue())
+                    collection.add(node.getValue());
+            } else {
+                for (Entry<K, V> node : bucket.asMap().entrySet())
+                    collection.add(node.getValue());
             }
         }
         return collection;
     }
 
+
     @Override
     public Collection<K> keySet() {
         Collection<K> collection = new ArrayList<>(size);
-        for (Deque<Node<K, V>> bucket : buckets) {
-            for (Node<K, V> node : bucket) {
-                collection.add(node.key);
+        for (Bucket<K, V> bucket : buckets) {
+            if (bucket.asQueue() instanceof java.util.Deque) {
+                for (Entry<K, V> node : bucket.asQueue())
+                    collection.add(node.getKey());
+            } else {
+                for (Entry<K, V> node : bucket.asMap().entrySet())
+                    collection.add(node.getKey());
             }
         }
         return collection;
@@ -291,9 +433,13 @@ public class HashMap<K, V> implements Map<K, V> {
     @Override
     public Collection<Entry<K, V>> entrySet() {
         Collection<Entry<K, V>> collection = new ArrayList<>(size);
-        for (Deque<Node<K, V>> bucket : buckets) {
-            for (Node<K, V> node : bucket) {
-                collection.add(node);
+        for (Bucket<K, V> bucket : buckets) {
+            if (bucket.isQueue()) {
+                for (Entry<K, V> node : bucket.asQueue())
+                    collection.add(node);
+            } else {
+                for (Entry<K, V> node : bucket.asMap().entrySet())
+                    collection.add(node);
             }
         }
         return collection;

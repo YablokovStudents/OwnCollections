@@ -11,8 +11,8 @@ public class MapTest {
     @DataProvider(name = "maps")
     public Object[][] getMaps() {
         return new Object[][]{
-                /*{new HashMap<Integer, Integer>()},*/
-                {new TreeMap<Integer, Integer>(new TreeMapComparator<>())}
+                {new HashMap<Integer, Integer>()}/*,
+                {new TreeMap<Integer, Integer>(new TreeMapComparator<>())}*/
         };
     }
 
@@ -113,25 +113,24 @@ public class MapTest {
         assertFalse(map.containsKey(5));
     }
 
-    @Test
-    public void containsValu() {
-        Map<Integer, Integer> map = new TreeMap<>();
+    @Test(dataProvider = "maps")
+    public void containsValu(Map<Integer, Integer> map) {
+        System.out.println("TRTRTRTRT");
+        map.put(0, null);
 
-        map.put(10, null);
+        map.put(17, null);
+        map.put(34, null);
 
-        map.put(5, null);
-        map.put(15, null);
+        map.put(51, null);
+        map.put(68, null);
 
-        map.put(3, null);
-        map.put(8, null);
+        map.put(85, null);
+        map.put(102, null);
 
-        map.put(13, null);
-        map.put(20, null);
+        map.put(119, null);
+        map.put(136, null);
 
-        map.put(18, null);
-        map.put(22, null);
-
-        map.put(11, null);
+        map.put(144, null);
         map.put(14, null);
 
         map.put(1, null);
@@ -139,7 +138,12 @@ public class MapTest {
 
         map.put(7, null);
         map.put(9, null);
-
+        map.remove(119);
+        map.remove(102);
+        map.remove(17);
+        map.remove(34);
+        map.remove(51);
+        map.remove(68);
         System.out.println(map.toString());
     }
 }
