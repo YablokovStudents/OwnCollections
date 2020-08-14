@@ -12,10 +12,10 @@ public class TreeMap<K, V> implements Map<K, V> {
     private static final char TO_STRING_ITEMS_DELIMITER = ' ';
 
     private int size;
-    public Node<K,V> root;
-    public final Comparator<K> comparator;
+    protected Node<K,V> root;
+    protected final Comparator<K> comparator;
 
-    static class Node<K, V> implements Entry<K, V> {
+    protected static class Node<K, V> implements Entry<K, V> {
         public final K key;
         public V value;
         private Node<K, V> parent;
@@ -52,10 +52,6 @@ public class TreeMap<K, V> implements Map<K, V> {
         }
     }
 
-    public Node<K, V> getRoot() {
-        return root;
-    }
-
     private static class EmbeddedComparator<K extends Comparable<K>> implements Comparator<K> {
         @Override
         public int compare(K key1, K key2) {
@@ -90,7 +86,7 @@ public class TreeMap<K, V> implements Map<K, V> {
         return getNode(key) != null;
     }
 
-    private Node<K, V> getNode(K key) {
+    protected Node<K, V> getNode(K key) {
         if (comparator instanceof EmbeddedComparator) {
             if (key == null) {
                 throw new NullPointerException();
