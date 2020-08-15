@@ -20,14 +20,12 @@ public class TreeMap<K, V> implements Map<K, V> {
         private Node<K, V> left;
         private Node<K, V> right;
         private int height;
-        private int balanceFactor;
 
         public Node(K key, V value, Node<K, V> parent) {
             this.key = key;
             this.value = value;
             this.parent = parent;
-            height = 0;
-            balanceFactor = 0;
+            height = 1;
         }
 
         @Override
@@ -59,10 +57,6 @@ public class TreeMap<K, V> implements Map<K, V> {
 
         public int getHeight() {
             return height;
-        }
-
-        public int getBalanceFactor() {
-            return balanceFactor;
         }
     }
 
@@ -173,14 +167,13 @@ public class TreeMap<K, V> implements Map<K, V> {
             return null;
         }
 
-        Node<K, V> current = root;
-        while (true) {
+        for (Node<K, V> current = root; ; ) {
             int compareResult = comparator.compare(key, current.key);
             if (compareResult > 0) {
                 if (current.right == null) {
                     current.right = new Node<>(key, value, current);
                     size++;
-                    calculateHeight(current.right);
+                    balanceByRotateAsNeeded(current.right);
                     return null;
                 } else {
                     current = current.right;
@@ -189,7 +182,7 @@ public class TreeMap<K, V> implements Map<K, V> {
                 if (current.left == null) {
                     current.left = new Node<>(key, value, current);
                     size++;
-                    calculateHeight(current.left);
+                    balanceByRotateAsNeeded(current.left);
                     return null;
                 } else {
                     current = current.left;
@@ -202,102 +195,72 @@ public class TreeMap<K, V> implements Map<K, V> {
         }
     }
 
-    public void calculateHeight(Node<K, V> node) {
-        if (node != null) {
-            Node<K, V> current = node;
-            while (true) {
-                int oldHeight = current.height;
-                if (current.left != null && current.right != null) {
-                    if (current.left.height > current.right.height) {
-                        current.height = current.left.height + 1;
-                        // if (current.height == oldHeight) return;
-                        // else {
-                        balanceFactorAndRotate(current);
-                        // }
-                    } else if (current.left.height < current.right.height) {
-                        current.height = current.right.height + 1;
-                        //  if (current.height == oldHeight) return;
-                        //  else {
-                        balanceFactorAndRotate(current);
-                        //  }
-                    } else {
-                        current.height = current.left.height + 1;
-                    }
-                } else if (current.left == null && current.right != null) {
-                    current.height = current.right.height + 1;
-                    // if (current.height == oldHeight) return;
-                    // else {
-                    balanceFactorAndRotate(current);
-                    //  }
-                } else if (current.left != null) {
-                    current.height = current.left.height + 1;
-                    // if (current.height == oldHeight) return;
-                    // else {
-                    balanceFactorAndRotate(current);
-                    //  }
-                } else current.height = 0;
-                if (current.parent != null) current = current.parent;
-                else return;
+    private void balanceByRotateAsNeeded(Node<K, V> node) {
+        node.height = calculateHeightNode(node);
+        int balanceFactor = calculateBalanceFactor(node);
+        if (balanceFactor < -1) {
+            if (calculateBalanceFactor(node.right) > 0) {
+                Node<K, V> originalRightNode = node.right;
+                rotateRight(node.right);
+                originalRightNode.height = calculateHeightNode(originalRightNode);
             }
+            rotateLeft(node);
+            node.height = calculateHeightNode(node);
+            balanceByRotateAsNeeded(node.parent);
+        } else if (balanceFactor > 1) {
+            if (calculateBalanceFactor(node.left) < 0) {
+                Node<K, V> originalLeftNode = node.left;
+                rotateLeft(node.left);
+                originalLeftNode.height = calculateHeightNode(originalLeftNode);
+            }
+            rotateRight(node);
+            node.height = calculateHeightNode(node);
+            balanceByRotateAsNeeded(node.parent);
+        } else {
+            updateHeightGoingUpNodes(node.parent);
         }
     }
 
-    public Node<K, V> calculateHeightForOneNode(Node<K, V> node) {
-        if (node != null) {
-            if (node.left != null && node.right != null) {
-                if (node.left.height > node.right.height) {
-                    node.height = node.left.height + 1;
-                    balanceFactorAndRotate(node);
-                } else if (node.left.height < node.right.height) {
-                    node.height = node.right.height + 1;
-                    balanceFactorAndRotate(node);
-                } else {
-                    node.height = node.left.height + 1;
-                }
-            } else if (node.left == null && node.right != null) {
-                node.height = node.right.height + 1;
-                balanceFactorAndRotate(node);
-            } else if (node.left != null) {
-                node.height = node.left.height + 1;
-                balanceFactorAndRotate(node);
-            } else node.height = 0;
-            if (node.parent != null) return node.parent;
+    private int calculateBalanceFactor(Node<K, V> current) {
+        if (current == null) {
+            return 0;
         }
-        return null;
+
+        if (current.left != null) {
+            if (current.right != null) {
+                return current.left.height - current.right.height;
+            }
+            return current.left.height;
+        }
+        if (current.right != null) {
+            return -current.right.height;
+        }
+        return 0;
     }
 
-    private void balanceFactorAndRotate(Node<K, V> current) {
-        balanceFactor(current);
-        if (current.balanceFactor < -1 && current.right != null /*&& current.right.right != null*/ && balanceFactor(current.right) > 0) {
-            Node<K, V> cr = current.right;
-            rotateRight(current.right);
-            calculateHeightForOneNode(cr);
-            rotateLeft(current);
-            calculateHeight(calculateHeightForOneNode(current));
-        } else if (current.balanceFactor > 1 && current.left != null /*&& current.left.left != null*/ && balanceFactor(current.left) < 0) {
-            Node<K, V> cl = current.left;
-            rotateLeft(current.left);
-            calculateHeightForOneNode(cl);
-            rotateRight(current);
-            calculateHeight(calculateHeightForOneNode(current));
-        } else if (current.balanceFactor < -1) {
-            rotateLeft(current);
-            calculateHeight(calculateHeightForOneNode(current));
-        } else if (current.balanceFactor > 1) {
-            rotateRight(current);
-            calculateHeight(calculateHeightForOneNode(current));
+    public int calculateHeightNode(Node<K, V> node) {
+        if (node == null) return 0;
+
+        if (node.left != null) {
+            if (node.right != null) {
+                return Math.max(node.left.height, node.right.height) + 1;
+            }
+            return node.left.height + 1;
         }
+        if (node.right != null) {
+            return node.right.height + 1;
+        }
+        return 1;
     }
 
-    private int balanceFactor(Node<K, V> current) {
-        if (current.left != null && current.right != null)
-            current.balanceFactor = current.left.height - current.right.height;
-        else if (current.left != null)
-            current.balanceFactor = current.left.height;
-        else if (current.right != null)
-            current.balanceFactor = -current.right.height;
-        else current.balanceFactor = 0;
-        return current.balanceFactor;
+    private void updateHeightGoingUpNodes(Node<K, V> node) {
+        if (node == null) return;
+
+        int newNodeHeight = calculateHeightNode(node);
+        if (node.height != newNodeHeight) {
+            node.height = newNodeHeight;
+            updateHeightGoingUpNodes(node.parent);
+        }
     }
 
     @Override
@@ -306,11 +269,7 @@ public class TreeMap<K, V> implements Map<K, V> {
         if (deletingNode == null) {
             return null;
         }
-        V deletedNodeValue = deletingNode.value;
-        if (deletingNode == root) {
-            clear();
-            return deletedNodeValue;
-        }
+
         if (deletingNode.right != null) {
             replaceNodeBySmallestFromRightSide(deletingNode);
         } else if (deletingNode.left != null) {
@@ -322,20 +281,18 @@ public class TreeMap<K, V> implements Map<K, V> {
                 deletingNode.parent.left = null;
             }
             --size;
-            clearNodeLinks(deletingNode);
         }
         clearNodeLinks(deletingNode);
-        return deletedNodeValue;
+        return deletingNode.value;
     }
-
 
     private void replaceNodeBySmallestFromRightSide(Node<K, V> deletingNode) {
         Node<K, V> smallestNodeFromRightSide = deletingNode.right;
-        Node<K, V> smallestNodeFromRightSideParent = null;
         while (smallestNodeFromRightSide.left != null) {
             smallestNodeFromRightSide = smallestNodeFromRightSide.left;
         }
-        Node<K, V> current = smallestNodeFromRightSide.parent;
+
+        Node<K, V> smallestNodeFromRightSideParent = null;
         if (smallestNodeFromRightSide.parent != deletingNode) {
             smallestNodeFromRightSideParent = smallestNodeFromRightSide.parent;
             smallestNodeFromRightSide.parent.left = smallestNodeFromRightSide.right;
@@ -347,7 +304,6 @@ public class TreeMap<K, V> implements Map<K, V> {
             smallestNodeFromRightSide.right = deletingNode.right;
             deletingNode.right.parent = smallestNodeFromRightSide;
         }
-
 
         smallestNodeFromRightSide.parent = deletingNode.parent;
         if (deletingNode.parent != null) {
@@ -364,21 +320,26 @@ public class TreeMap<K, V> implements Map<K, V> {
         if (deletingNode.left != null) {
             deletingNode.left.parent = smallestNodeFromRightSide;
         }
-        if (smallestNodeFromRightSideParent != null) calculateHeight(smallestNodeFromRightSideParent);
-        else calculateHeight(smallestNodeFromRightSide);
         --size;
+
+        if (smallestNodeFromRightSideParent != null) {
+            balanceByRotateAsNeeded(smallestNodeFromRightSideParent);
+        } else {
+            balanceByRotateAsNeeded(smallestNodeFromRightSide);
+        }
     }
 
     private void replaceNodeByGreatestFromLeftSide(Node<K, V> deletingNode) {
         Node<K, V> greatestNodeFromLeftSide = deletingNode.left;
-        Node<K, V> greatestNodeFromLeftSideParent = null;
         while (greatestNodeFromLeftSide.right != null) {
             greatestNodeFromLeftSide = greatestNodeFromLeftSide.right;
         }
-        Node<K, V> current = greatestNodeFromLeftSide.parent;
+
+        Node<K, V> greatestNodeFromLeftSideParent = null;
         if (greatestNodeFromLeftSide.parent != deletingNode) {
             greatestNodeFromLeftSideParent = greatestNodeFromLeftSide.parent;
             greatestNodeFromLeftSide.parent.right = greatestNodeFromLeftSide.left;
+
             if (greatestNodeFromLeftSide.left != null) {
                 greatestNodeFromLeftSide.left.parent = greatestNodeFromLeftSide.parent;
             }
@@ -402,52 +363,64 @@ public class TreeMap<K, V> implements Map<K, V> {
         if (deletingNode.right != null) {
             deletingNode.right.parent = greatestNodeFromLeftSide;
         }
-        if (greatestNodeFromLeftSideParent != null) calculateHeight(greatestNodeFromLeftSideParent);
-        else calculateHeight(greatestNodeFromLeftSide);
         --size;
+
+        if (greatestNodeFromLeftSideParent != null) {
+            balanceByRotateAsNeeded(greatestNodeFromLeftSideParent);
+        } else {
+            balanceByRotateAsNeeded(greatestNodeFromLeftSide);
+        }
     }
 
     public void rotateRight(Node<K, V> node) {
-        if (node.left != null) {
-            if (node == root) {
-                root = node.left;
+        if (node.right == null) return;
+
+        if (node.parent != null) {
+            Node<K, V> parent = node.parent;
+            if (parent.left == node) {
+                parent.left = node.left;
+            } else {
+                parent.right = node.left;
             }
-            if (node.parent != null) {
-                Node<K, V> parent = node.parent;
-                if (parent.left == node) parent.left = node.left;
-                else parent.right = node.left;
-            }
-            Node<K, V> rc = node.left.right;
-            node.left.right = node;
-            node.left.parent = node.parent;
-            node.parent = node.left;
-            node.left = rc;
-            if (rc != null) {
-                rc.parent = node;
-            }
-            // calculateHeight(calculateHeightForOneNode(node));
+        }
+
+        Node<K, V> rightChildOfLeftNode = node.left.right;
+        node.left.right = node;
+        node.left.parent = node.parent;
+        node.parent = node.left;
+        node.left = rightChildOfLeftNode;
+        if (rightChildOfLeftNode != null) {
+            rightChildOfLeftNode.parent = node;
+        }
+
+        if (node == root) {
+            root = node.left;
         }
     }
 
     public void rotateLeft(Node<K, V> node) {
-        if (node.right != null) {
-            if (node == root) {
-                root = node.right;
+        if (node.right == null) return;
+
+        if (node.parent != null) {
+            Node<K, V> parent = node.parent;
+            if (parent.left == node) {
+                parent.left = node.right;
+            } else {
+                parent.right = node.right;
             }
-            if (node.parent != null) {
-                Node<K, V> parent = node.parent;
-                if (parent.left == node) parent.left = node.right;
-                else parent.right = node.right;
-            }
-            Node<K, V> lc = node.right.left;
-            node.right.left = node;
-            node.right.parent = node.parent;
-            node.parent = node.right;
-            node.right = lc;
-            if (lc != null) {
-                lc.parent = node;
-            }
-            // calculateHeight(calculateHeightForOneNode(node));
+        }
+
+        Node<K, V> leftChildOfRightNode = node.right.left;
+        node.right.left = node;
+        node.right.parent = node.parent;
+        node.parent = node.right;
+        node.right = leftChildOfRightNode;
+        if (leftChildOfRightNode != null) {
+            leftChildOfRightNode.parent = node;
+        }
+
+        if (node == root) {
+            root = node.right;
         }
     }
 
@@ -552,7 +525,7 @@ public class TreeMap<K, V> implements Map<K, V> {
         Integer prevLastPrintedItemInRowIndex = indexesOfLastPrintedItemInRows.put(root.height - printingNode.node.height, printingNode.indexInRow);
         if (prevLastPrintedItemInRowIndex == null) {
             prevLastPrintedItemInRowIndex = -1;
-            rowNodesIndent = getRowItemsIndent(root.height + 1, root.height - printingNode.node.height, maxKeyLength);
+            rowNodesIndent = getRowItemsIndent(root.height, root.height - printingNode.node.height, maxKeyLength);
 
             stringBuilder.append("\n");
             // заполняем левый отступ первого элемента строки символом delimiter'ом
