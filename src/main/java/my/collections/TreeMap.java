@@ -1,7 +1,5 @@
 package my.collections;
 
-
-
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Comparator;
@@ -12,15 +10,15 @@ public class TreeMap<K, V> implements Map<K, V> {
     private static final char TO_STRING_ITEMS_DELIMITER = ' ';
 
     private int size;
-    protected Node<K,V> root;
+    protected Node<K, V> root;
     protected final Comparator<K> comparator;
 
     protected static class Node<K, V> implements Entry<K, V> {
-        public final K key;
-        public V value;
+        private final K key;
+        private V value;
         private Node<K, V> parent;
-        public Node<K, V> left;
-        public Node<K, V> right;
+        private Node<K, V> left;
+        private Node<K, V> right;
         private int height;
         private int balanceFactor;
 
@@ -47,9 +45,29 @@ public class TreeMap<K, V> implements Map<K, V> {
             this.value = value;
         }
 
+        public Node<K, V> getParent() {
+            return parent;
+        }
+
+        public Node<K, V> getLeft() {
+            return left;
+        }
+
+        public Node<K, V> getRight() {
+            return right;
+        }
+
         public int getHeight() {
             return height;
         }
+
+        public int getBalanceFactor() {
+            return balanceFactor;
+        }
+    }
+
+    public Node<K, V> getRoot() {
+        return root;
     }
 
     private static class EmbeddedComparator<K extends Comparable<K>> implements Comparator<K> {
@@ -149,8 +167,6 @@ public class TreeMap<K, V> implements Map<K, V> {
     }
 
     private V putValueByComparator(K key, V value) {
-        System.out.println("=====================================");
-        System.out.println("ВСТАВКА ключ " + key);
         if (root == null) {
             root = new Node<>(key, value, null);
             size++;
@@ -187,7 +203,6 @@ public class TreeMap<K, V> implements Map<K, V> {
     }
 
     public void calculateHeight(Node<K, V> node) {
-        System.out.println(888);
         if (node != null) {
             Node<K, V> current = node;
             while (true) {
@@ -197,41 +212,30 @@ public class TreeMap<K, V> implements Map<K, V> {
                         current.height = current.left.height + 1;
                         // if (current.height == oldHeight) return;
                         // else {
-                        System.out.println(current.key + "  " + current.height);
-                        System.out.println("добавилась высота от левой");
                         balanceFactorAndRotate(current);
                         // }
                     } else if (current.left.height < current.right.height) {
                         current.height = current.right.height + 1;
                         //  if (current.height == oldHeight) return;
                         //  else {
-                        System.out.println(current.key + "  " + current.height);
-                        System.out.println("добавилась высота от правой");
                         balanceFactorAndRotate(current);
                         //  }
                     } else {
                         current.height = current.left.height + 1;
-                        System.out.println(current.key + "  " + current.height);
-                        System.out.println("у детей равные высоты");
                     }
                 } else if (current.left == null && current.right != null) {
                     current.height = current.right.height + 1;
                     // if (current.height == oldHeight) return;
                     // else {
-                    System.out.println(current.key + "  " + current.height);
-                    System.out.println("добавилась высота от правой левого нет");
                     balanceFactorAndRotate(current);
                     //  }
                 } else if (current.left != null) {
                     current.height = current.left.height + 1;
                     // if (current.height == oldHeight) return;
                     // else {
-                    System.out.println(current.key + "  " + current.height);
-                    System.out.println("добавилась высота от левой правого нет");
                     balanceFactorAndRotate(current);
                     //  }
                 } else current.height = 0;
-                System.out.println(current.key + " ключ с высотой " + current.height + " переход выше " + current.balanceFactor + " баланс");
                 if (current.parent != null) current = current.parent;
                 else return;
             }
@@ -243,50 +247,34 @@ public class TreeMap<K, V> implements Map<K, V> {
             if (node.left != null && node.right != null) {
                 if (node.left.height > node.right.height) {
                     node.height = node.left.height + 1;
-                    System.out.println(node.key + "  " + node.height);
-                    System.out.println("1добавилась высота от левой");
                     balanceFactorAndRotate(node);
                 } else if (node.left.height < node.right.height) {
                     node.height = node.right.height + 1;
-                    System.out.println(node.key + "  " + node.height);
-                    System.out.println("1добавилась высота от правой");
                     balanceFactorAndRotate(node);
                 } else {
                     node.height = node.left.height + 1;
-                    System.out.println(node.key + "  " + node.height);
-                    System.out.println("1у детей равные высоты");
                 }
             } else if (node.left == null && node.right != null) {
                 node.height = node.right.height + 1;
-                System.out.println(node.key + "  " + node.height);
-                System.out.println("1добавилась высота от правой левого нет");
                 balanceFactorAndRotate(node);
             } else if (node.left != null) {
                 node.height = node.left.height + 1;
-                System.out.println(node.key + "  " + node.height);
-                System.out.println("1добавилась высота от левой правого нет высота левого сына " + node.left.key + " - " + node.left.height);
                 balanceFactorAndRotate(node);
             } else node.height = 0;
-            System.out.println(node.key + " ключ с высотойй " + node.height);
             if (node.parent != null) return node.parent;
         }
         return null;
     }
 
     private void balanceFactorAndRotate(Node<K, V> current) {
-        if (current.parent != null) System.out.println(current.parent.key + " отец ключа " + current.key + " в начале balanceFactorAndRotate");
-        System.out.println("1баланс фактор ключа " + current.key + " - " + current.balanceFactor);
         balanceFactor(current);
-        System.out.println("баланс фактор ключа после подсчета" + current.key + " - " + current.balanceFactor);
         if (current.balanceFactor < -1 && current.right != null /*&& current.right.right != null*/ && balanceFactor(current.right) > 0) {
-            System.out.println("большой левый поворот ключа " + current.key);
             Node<K, V> cr = current.right;
             rotateRight(current.right);
             calculateHeightForOneNode(cr);
             rotateLeft(current);
             calculateHeight(calculateHeightForOneNode(current));
         } else if (current.balanceFactor > 1 && current.left != null /*&& current.left.left != null*/ && balanceFactor(current.left) < 0) {
-            System.out.println("большой правй поворот ключа " + current.key);
             Node<K, V> cl = current.left;
             rotateLeft(current.left);
             calculateHeightForOneNode(cl);
@@ -298,17 +286,7 @@ public class TreeMap<K, V> implements Map<K, V> {
         } else if (current.balanceFactor > 1) {
             rotateRight(current);
             calculateHeight(calculateHeightForOneNode(current));
-        } else if (current.balanceFactor == 0) System.out.println("баланс 0");
-        else
-            System.out.println(current.key + " КЛЮЧ с балансом " + current.balanceFactor/* + current.right.key + " правый " + current.left.key + " левый "*/);
-        System.out.println("2баланс фактор ключа " + current.key + " - " + current.balanceFactor);
-        if (current.right != null)
-            System.out.println("дети правый key " + current.right.key + " высота " + current.right.height);
-        if (current.left != null)
-            System.out.println("левый ребенок " + current.left.key + " высота " + current.left.height);
-        if (current.parent != null)
-            System.out.println(" отец " + current.parent.key);
-
+        }
     }
 
     private int balanceFactor(Node<K, V> current) {
@@ -435,7 +413,6 @@ public class TreeMap<K, V> implements Map<K, V> {
                 root = node.left;
             }
             if (node.parent != null) {
-                System.out.println(node.parent.key + " отец ключа " + node.key + " при повороте влево");
                 Node<K, V> parent = node.parent;
                 if (parent.left == node) parent.left = node.left;
                 else parent.right = node.left;
@@ -445,10 +422,10 @@ public class TreeMap<K, V> implements Map<K, V> {
             node.left.parent = node.parent;
             node.parent = node.left;
             node.left = rc;
-            if (rc != null)
-            rc.parent = node;
+            if (rc != null) {
+                rc.parent = node;
+            }
             // calculateHeight(calculateHeightForOneNode(node));
-            System.out.println("правый поворот ключа " + node.key);
         }
     }
 
@@ -458,7 +435,6 @@ public class TreeMap<K, V> implements Map<K, V> {
                 root = node.right;
             }
             if (node.parent != null) {
-                System.out.println(node.parent.key + " отец ключа " + node.key + " при повороте влево");
                 Node<K, V> parent = node.parent;
                 if (parent.left == node) parent.left = node.right;
                 else parent.right = node.right;
@@ -468,10 +444,10 @@ public class TreeMap<K, V> implements Map<K, V> {
             node.right.parent = node.parent;
             node.parent = node.right;
             node.right = lc;
-            if (lc != null)
-            lc.parent = node;
+            if (lc != null) {
+                lc.parent = node;
+            }
             // calculateHeight(calculateHeightForOneNode(node));
-            System.out.println("левый поворот ключа " + node.key);
         }
     }
 
@@ -547,52 +523,61 @@ public class TreeMap<K, V> implements Map<K, V> {
 
         StringBuilder stringBuilder = new StringBuilder();
 
+        int rowNodesIndent = TO_STRING_MIN_ITEMS_DISTANCE;
         int maxKeyLength = Objects.toString(getBiggestKey(root)).length();
-        List<List<PrintingNode<K, V>>> rowsOfNodes = new ArrayList<>();
-        addSubNodesInfo(rowsOfNodes, 0, root, 1);
-        for (int rowNumber = 0; rowNumber < rowsOfNodes.size(); ++rowNumber) {
-            int prevNodeIndexInRow = 0;
-            int itemsIndent = getIndent(rowsOfNodes.size(), rowNumber, maxKeyLength);
-            List<PrintingNode<K, V>> rowOfNodes = rowsOfNodes.get(rowNumber);
-            for (int nodeNumber = 0; nodeNumber < rowOfNodes.size(); ++nodeNumber) {
-                PrintingNode<K, V> node = rowOfNodes.get(nodeNumber);
-                int distanceBetweenNodes = node.indexInRow - prevNodeIndexInRow;
+        Map<Integer, Integer> indexesOfLastPrintedItemInRows = new HashMap<>();
 
-                // заполняем отступы между соседними элементами
-                for (int i = 0; i < distanceBetweenNodes; ++i) {
-                    for (int j = 0; j < itemsIndent; ++j) {
-                        stringBuilder.append(TO_STRING_ITEMS_DELIMITER);
-                    }
-                }
+        Deque<PrintingNode<K, V>> deque = new LinkedList<>();
+        deque.addLast(new PrintingNode<>(root, 0));
+        while (!deque.isEmpty()) {
+            PrintingNode<K, V> printingNode = deque.pollFirst();
+            rowNodesIndent = addLeftIndentForNode(stringBuilder, rowNodesIndent, maxKeyLength, indexesOfLastPrintedItemInRows, printingNode);
 
-                if (nodeNumber == 0) {
-                    // заполняем левый отступ первого элемента строки символом delimiter'ом
-                    for (int j = 0; j < (itemsIndent >>> 1); ++j) {
-                        stringBuilder.append(TO_STRING_ITEMS_DELIMITER);
-                    }
-                    // заполняем пропущенные элементы символом delimiter'ом
-                    for (int i = 0; i < node.indexInRow; ++i) {
-                        for (int j = 0; j < maxKeyLength; ++j) {
-                            stringBuilder.append(TO_STRING_ITEMS_DELIMITER);
-                        }
-                    }
-                } else {
-                    // заполняем пропущенные элементы символом delimiter'ом
-                    for (int i = 1; i < distanceBetweenNodes; ++i) {
-                        for (int j = 0; j < maxKeyLength; ++j) {
-                            stringBuilder.append(TO_STRING_ITEMS_DELIMITER);
-                        }
-                    }
-                }
+            // дополняем до длины наибольшего ключа с учетом централизации
+            stringBuilder.append(StringUtils.center(Objects.toString(printingNode.node.key), maxKeyLength));
 
-                // дополняем до длины наибольшего ключа с учетом централизации
-                stringBuilder.append(StringUtils.center(Objects.toString(node.key), maxKeyLength));
-                prevNodeIndexInRow = node.indexInRow;
+            if (printingNode.node.left != null) {
+                deque.addLast(new PrintingNode<>(printingNode.node.left, printingNode.indexInRow << 1));
             }
+            if (printingNode.node.right != null) {
+                deque.addLast(new PrintingNode<>(printingNode.node.right, (printingNode.indexInRow << 1) + 1));
+            }
+        }
+        return stringBuilder.toString();
+    }
+
+    /** Добавление отступа перед выводимым элементом. */
+    private int addLeftIndentForNode(StringBuilder stringBuilder, int rowNodesIndent, int maxKeyLength,
+                                     Map<Integer, Integer> indexesOfLastPrintedItemInRows, PrintingNode<K, V> printingNode) {
+        Integer prevLastPrintedItemInRowIndex = indexesOfLastPrintedItemInRows.put(root.height - printingNode.node.height, printingNode.indexInRow);
+        if (prevLastPrintedItemInRowIndex == null) {
+            prevLastPrintedItemInRowIndex = -1;
+            rowNodesIndent = getRowItemsIndent(root.height + 1, root.height - printingNode.node.height, maxKeyLength);
+
             stringBuilder.append("\n");
+            // заполняем левый отступ первого элемента строки символом delimiter'ом
+            for (int i = 0; i < (rowNodesIndent >>> 1); ++i) {
+                stringBuilder.append(TO_STRING_ITEMS_DELIMITER);
+            }
+        } else {
+            for (int j = 0; j < rowNodesIndent; ++j) {
+                stringBuilder.append(TO_STRING_ITEMS_DELIMITER);
+            }
         }
 
-        return stringBuilder.toString();
+        int distanceToPrevNodeInRow = printingNode.indexInRow - prevLastPrintedItemInRowIndex;
+        // заполняем отступы за отсутствующие элементы строки
+        for (int i = 1; i < distanceToPrevNodeInRow; ++i) {
+            // заполняем отступы между соседними элементами строки, которые отсутствуют
+            for (int j = 0; j < rowNodesIndent; ++j) {
+                stringBuilder.append(TO_STRING_ITEMS_DELIMITER);
+            }
+            // заполняем отступы за отсутствующие элементы строки
+            for (int j = 0; j < maxKeyLength; ++j) {
+                stringBuilder.append(TO_STRING_ITEMS_DELIMITER);
+            }
+        }
+        return rowNodesIndent;
     }
 
     private K getBiggestKey(Node<K, V> node) {
@@ -604,45 +589,24 @@ public class TreeMap<K, V> implements Map<K, V> {
         return node.getKey();
     }
 
-    //private int getIndent(int rowsCount, int rowNumber) {
-    //    int powerOfTwo = 1 << (rowsCount - rowNumber - 1);
-    //    return ITEM_SHIFT * powerOfTwo + ITEM_WIDTH * (powerOfTwo >>> 1) + ITEM_WIDTH;
-    //}
-
-    private int getIndent(int rowsCount, int rowIndex, int maxKeyLength) {
-        if (rowIndex >= rowsCount - 1) {
+    private int getRowItemsIndent(int maxRowIndex, int rowIndex, int maxKeyLength) {
+        if (rowIndex >= maxRowIndex - 1) {
             return TO_STRING_MIN_ITEMS_DISTANCE;
         }
-        return (getIndent(rowsCount, rowIndex + 1, maxKeyLength) << 1) + maxKeyLength;
+        return (getRowItemsIndent(maxRowIndex, rowIndex + 1, maxKeyLength) << 1) + maxKeyLength;
     }
 
-    private void addSubNodesInfo(List<List<PrintingNode<K, V>>> rowsOfNodes, int rowIndex, Node<K, V> node, int nodeIndexInRow) {
-        if (node == null) return;
-
-        addNodeToRow(rowsOfNodes, rowIndex, node, nodeIndexInRow - 1);
-        addSubNodesInfo(rowsOfNodes, rowIndex + 1, node.left, (nodeIndexInRow << 1) - 1);
-        addSubNodesInfo(rowsOfNodes, rowIndex + 1, node.right, nodeIndexInRow << 1);
-    }
-
-    private void addNodeToRow(List<List<PrintingNode<K, V>>> rowsOfNodes, int rowNumber, Node<K, V> node, int nodeNumberInRow) {
-        List<PrintingNode<K, V>> rowOfNodes;
-        if (rowNumber >= rowsOfNodes.size()) {
-            rowOfNodes = new ArrayList<>();
-            rowsOfNodes.add(rowNumber, rowOfNodes);
-        } else {
-            rowOfNodes = rowsOfNodes.get(rowNumber);
-        }
-        rowOfNodes.add(new PrintingNode<>(node.getKey(), node.getValue(), nodeNumberInRow));
-    }
+    // private int getRowItemsIndent(int rowsCount, int rowNumber) {
+    //     int powerOfTwo = 1 << (rowsCount - rowNumber - 1);
+    //     return ITEM_SHIFT * powerOfTwo + ITEM_WIDTH * (powerOfTwo >>> 1) + ITEM_WIDTH;
+    // }
 
     private static class PrintingNode<K, V> {
-        private final K key;
-        private final V value;
+        private final Node<K, V> node;
         private final int indexInRow;
 
-        private PrintingNode(K key, V value, int indexInRow) {
-            this.key = key;
-            this.value = value;
+        private PrintingNode(Node<K, V> node, int indexInRow) {
+            this.node = node;
             this.indexInRow = indexInRow;
         }
     }

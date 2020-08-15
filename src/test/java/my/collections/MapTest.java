@@ -11,8 +11,8 @@ public class MapTest {
     @DataProvider(name = "maps")
     public Object[][] getMaps() {
         return new Object[][]{
-                {new HashMap<Integer, Integer>()}/*,
-                {new TreeMap<Integer, Integer>(new TreeMapComparator<>())}*/
+                {new HashMap<Integer, Integer>()},
+                {new TreeMap<Integer, Integer>(new TreeMapComparator<>())}
         };
     }
 
@@ -114,7 +114,7 @@ public class MapTest {
     }
 
     @Test
-    public void putTreeifyHashMapBucket() {
+    public void put_HashMapWithTreeifiedBucket() {
         Map<Integer, Integer> map = new HashMap<>();
         map.put(0, null);
 
@@ -145,5 +145,40 @@ public class MapTest {
         map.remove(34);
         map.remove(51);
         map.remove(68);
+    }
+
+    @Test
+    public void toString_TreeMap() {
+        Map<Integer, Integer> map = new TreeMap<Integer, Integer>(new TreeMapComparator<>());
+        map.put(10, null);
+
+        map.put(5, null);
+        map.put(15, null);
+
+        map.put(3, null);
+        map.put(8, null);
+
+        map.put(13, null);
+        map.put(20, null);
+
+        map.put(18, null);
+        map.put(22, null);
+
+        map.put(11, null);
+        map.put(14, null);
+
+        map.put(1, null);
+        map.put(4, null);
+
+        map.put(7, null);
+        map.put(9, null);
+
+        String expected =
+        "\n" +
+        "               10\n" +
+        "       5               15\n" +
+        "   3       8       13      20\n" +
+        " 1   4   7   9   11  14  18  22";
+        assertEquals(map.toString(), expected);
     }
 }

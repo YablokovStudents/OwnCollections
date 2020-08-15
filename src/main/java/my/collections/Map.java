@@ -63,7 +63,6 @@ public interface Map<K, V> {
      */
     Collection<K> keySet();
 
-
     /** Получение новой коллекции, состоящей из пар `<key, value>`, которые хранятся в рамках данной коллекции. */
     Collection<Entry<K, V>> entrySet();
 
