@@ -113,9 +113,9 @@ public class MapTest {
         assertFalse(map.containsKey(5));
     }
 
-    @Test(dataProvider = "maps")
-    public void containsValu(Map<Integer, Integer> map) {
-        System.out.println("TRTRTRTRT");
+    @Test
+    public void putTreeifyHashMapBucket() {
+        Map<Integer, Integer> map = new HashMap<>();
         map.put(0, null);
 
         map.put(17, null);
@@ -138,12 +138,12 @@ public class MapTest {
 
         map.put(7, null);
         map.put(9, null);
+
         map.remove(119);
         map.remove(102);
         map.remove(17);
         map.remove(34);
         map.remove(51);
         map.remove(68);
-        System.out.println(map.toString());
     }
 }
